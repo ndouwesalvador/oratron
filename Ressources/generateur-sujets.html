@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur de Sujets · Oratron</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #050508; color: #e0e0e0;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 20px;
+}
+h1 {
+  font-size: 1.4em; font-weight: 300; letter-spacing: 4px; text-transform: uppercase;
+  color: #ff6b35; margin: 30px 0 10px; text-align: center;
+}
+h1 strong { font-weight: 700; }
+
+.lang-toggle {
+  position: fixed; top: 20px; right: 20px; display: flex; gap: 4px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 3px; cursor: pointer; z-index: 10;
+}
+.lang-toggle span {
+  padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600; letter-spacing: .5px; transition: .3s; color: #555;
+}
+.lang-toggle span.active { background: #ff6b35; color: #fff; }
+
+.topic-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 24px; padding: 40px 30px; max-width: 600px; width: 100%;
+  margin: 20px auto; text-align: center; min-height: 200px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.topic-card::before {
+  content: ''; position: absolute; width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,53,.04), transparent);
+  top: -50px; right: -50px;
+}
+.topic-card .category {
+  font-size: .7em; text-transform: uppercase; letter-spacing: 3px; color: #ff6b35; font-weight: 600; margin-bottom: 12px;
+}
+.topic-card .topic-text {
+  font-size: clamp(1.3em, 4vw, 1.8em); font-weight: 600; line-height: 1.4;
+  color: #fff; transition: opacity .3s;
+}
+.topic-card .topic-hint {
+  font-size: .82em; color: #666; margin-top: 14px; font-style: italic; max-width: 400px;
+}
+
+.controls { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+.controls button {
+  padding: 12px 32px; border-radius: 50px; border: none; font-weight: 600;
+  font-size: .85em; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: .3s;
+}
+.controls .primary { background: linear-gradient(135deg,#ff6b35,#d94a1a); color: #fff; box-shadow: 0 0 20px rgba(255,107,53,.2); }
+.controls .primary:hover { box-shadow: 0 0 40px rgba(255,107,53,.5); transform: scale(1.03); }
+.controls .secondary { background: rgba(255,255,255,.06); color: #bbb; border: 1px solid rgba(255,255,255,.08); }
+.controls .secondary:hover { background: rgba(255,255,255,.1); }
+
+.timer-bar {
+  width: 100%; max-width: 600px; height: 4px; background: rgba(255,255,255,.04);
+  border-radius: 2px; margin: 12px 0; overflow: hidden; position: relative;
+}
+.timer-bar .fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, #ff6b35, #4fc3f7);
+  border-radius: 2px; transition: width 1s linear;
+}
+
+.history { max-width: 600px; width: 100%; margin-top: 24px; }
+.history h3 { font-size: .75em; text-transform: uppercase; letter-spacing: 2px; color: #555; margin-bottom: 8px; }
+.history .entry {
+  display: flex; gap: 8px; align-items: baseline;
+  padding: 6px 10px; border-radius: 8px; font-size: .82em; color: #777;
+  border-left: 2px solid rgba(255,107,53,.1); margin: 4px 0;
+}
+.history .entry .cat { color: #ff6b35; font-size: .65em; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+.back-link { margin-top: 16px; }
+.back-link a { color: #555; text-decoration: none; font-size: .78em; transition: .3s; }
+.back-link a:hover { color: #ff6b35; }
+
+.stats-line { display: flex; gap: 20px; justify-content: center; margin-top: 16px; font-size: .72em; color: #555; }
+.stats-line span { }
+
+@media (max-width:500px) {
+  .topic-card { padding: 24px 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="lang-toggle" id="lang-toggle">
+  <span class="active" data-lang="fr">FR</span>
+  <span data-lang="en">EN</span>
+</div>
+
+<h1>🎯 <strong id="title-text">Générateur de Sujets</strong></h1>
+<p id="sub-text" style="color:#555;font-size:.85em;text-align:center;max-width:500px;">
+  Tire un sujet au hasard et improvisé 2 minutes chrono
+</p>
+
+<div class="topic-card">
+  <div class="category" id="topic-cat">Convaincre</div>
+  <div class="topic-text" id="topic-text">🤖 L'intelligence artificielle va-t-elle remplacer les enseignants ?</div>
+  <div class="topic-hint" id="topic-hint">Structure : problème → solution → bénéfice</div>
+</div>
+
+<div class="timer-bar">
+  <div class="fill" id="timer-fill" style="width:0%"></div>
+</div>
+<div id="timer-display" style="font-family:'JetBrains Mono',monospace;font-size:1.4em;color:#555;letter-spacing:4px;">2:00</div>
+
+<div class="controls">
+  <button class="primary" id="btn-new">🎲 <span data-i18n="new">Nouveau sujet</span></button>
+  <button class="secondary" id="btn-timer">⏱ <span data-i18n="timerBtn">Lancer le chrono</span></button>
+</div>
+
+<div class="stats-line">
+  <span id="stat-total">0 <span data-i18n="statTopics">sujets tirés</span></span>
+</div>
+
+<div class="history" id="history">
+  <h3 data-i18n="history">Historique</h3>
+</div>
+
+<div class="back-link">
+  <a href="../site-entrainement/index.html">← <span data-i18n="back">Retour à Oratron</span></a>
+</div>
+
+<script>
+const L = {
+  fr: {
+    title: 'Générateur de Sujets', sub: 'Tire un sujet au hasard et improvisé 2 minutes chrono',
+    new: 'Nouveau sujet', timerBtn: 'Lancer le chrono',
+    statTopics: 'sujets tirés', history: 'Historique', back: 'Retour à Oratron',
+    startTimer: 'Démarrer le chrono', stopTimer: 'Arrêter'
+  },
+  en: {
+    title: 'Topic Generator', sub: 'Pick a random topic and improvise for 2 minutes',
+    new: 'New Topic', timerBtn: 'Start Timer',
+    statTopics: 'topics drawn', history: 'History', back: 'Back to Oratron',
+    startTimer: 'Start Timer', stopTimer: 'Stop'
+  }
+};
+
+const TOPICS = {
+  fr: [
+    { cat: 'Convaincre', text: "L'intelligence artificielle va-t-elle remplacer les enseignants ?", hint: 'Structure : problème → solution → bénéfice' },
+    { cat: 'Convaincre', text: 'Faut-il supprimer les notes à l\'école ?', hint: 'Donne 3 arguments pour et 1 contre' },
+    { cat: 'Convaincre', text: 'Le télétravail devrait-il devenir la norme ?', hint: 'Pense aux employés ET aux employeurs' },
+    { cat: 'Convaincre', text: 'Pourquoi lire est essentiel au 21e siècle', hint: 'Utilise une anecdote personnelle' },
+    { cat: 'Convaincre', text: 'Les réseaux sociaux : chance ou danger pour la démocratie ?', hint: 'Cite un exemple concret' },
+    { cat: 'Raconter', text: 'Le jour où tout a changé pour toi', hint: 'Décris l\'avant, le déclic, l\'après' },
+    { cat: 'Raconter', text: 'Ton plus grand échec et ce qu\'il t\'a appris', hint: 'Sois vulnérable et authentique' },
+    { cat: 'Raconter', text: 'Une rencontre qui a marqué ta vie', hint: 'Pourquoi cette personne ? Quel impact ?' },
+    { cat: 'Raconter', text: 'Ton souvenir d\'enfance le plus vivace', hint: 'Fais appel aux 5 sens' },
+    { cat: 'Raconter', text: 'Un voyage qui t\'a transformé', hint: 'Avant/pendant/après' },
+    { cat: 'Inspirer', text: 'Ce que le sport m\'a appris sur la vie', hint: 'Métaphore sportive → leçon de vie' },
+    { cat: 'Inspirer', text: 'Le courage, c\'est quoi pour toi ?', hint: 'Définition personnelle + exemple' },
+    { cat: 'Inspirer', text: 'Pourquoi il faut célébrer ses petites victoires', hint: 'Donne un rituel concret' },
+    { cat: 'Inspirer', text: 'La persévérance paie-t-elle toujours ?', hint: 'Nuance : quand s\'arrêter ?' },
+    { cat: 'Inspirer', text: 'Le bonheur est-il un choix ou une conséquence ?', hint: 'Appuie-toi sur une citation' },
+    { cat: 'Expliquer', text: 'Pourquoi le ciel est bleu (explique à un enfant)', hint: 'Simple, imagé, pas de jargon' },
+    { cat: 'Expliquer', text: 'Comment fonctionne un moteur de recherche', hint: 'Commence par une analogie' },
+    { cat: 'Expliquer', text: 'Explique la photosynthèse en 1 minute', hint: 'Soleil → eau → énergie' },
+    { cat: 'Expliquer', text: 'C\'est quoi le changement climatique ?', hint: 'Cause → effet → solution' },
+    { cat: 'Expliquer', text: 'Comment apprendre une langue étrangère', hint: 'Méthode concrète et progressive' },
+    { cat: 'Défendre', text: 'Les devoirs à la maison : pour ou contre ?', hint: 'Choisis un camp et assume' },
+    { cat: 'Défendre', text: 'Faut-il un revenu universel ?', hint: 'Arguments économiques ET sociaux' },
+    { cat: 'Défendre', text: 'Les zoos devraient-ils être interdits ?', hint: 'Bien-être animal vs conservation' },
+    { cat: 'Défendre', text: 'Le vote obligatoire : bonne ou mauvaise idée ?', hint: 'Liberté individuelle vs devoir civique' },
+    { cat: 'Défendre', text: 'Faut-il limiter l\'usage du plastique ?', hint: 'Pratique vs écologie' },
+  ],
+  en: [
+    { cat: 'Persuade', text: 'Will AI replace teachers?', hint: 'Structure: problem → solution → benefit' },
+    { cat: 'Persuade', text: 'Should school grades be abolished?', hint: 'Give 3 arguments for and 1 against' },
+    { cat: 'Persuade', text: 'Should remote work become the norm?', hint: 'Think about employees AND employers' },
+    { cat: 'Persuade', text: 'Why reading is essential in the 21st century', hint: 'Use a personal anecdote' },
+    { cat: 'Persuade', text: 'Social media: opportunity or threat to democracy?', hint: 'Cite a concrete example' },
+    { cat: 'Story', text: 'The day everything changed for you', hint: 'Describe before, the trigger, after' },
+    { cat: 'Story', text: 'Your biggest failure and what it taught you', hint: 'Be vulnerable and authentic' },
+    { cat: 'Story', text: 'A meeting that changed your life', hint: 'Why this person? What impact?' },
+    { cat: 'Story', text: 'Your most vivid childhood memory', hint: 'Engage all 5 senses' },
+    { cat: 'Story', text: 'A trip that transformed you', hint: 'Before/during/after' },
+    { cat: 'Inspire', text: 'What sports taught me about life', hint: 'Sports metaphor → life lesson' },
+    { cat: 'Inspire', text: 'What does courage mean to you?', hint: 'Personal definition + example' },
+    { cat: 'Inspire', text: 'Why you should celebrate small wins', hint: 'Give a concrete ritual' },
+    { cat: 'Inspire', text: 'Does perseverance always pay off?', hint: 'Nuance: when to stop?' },
+    { cat: 'Inspire', text: 'Is happiness a choice or a consequence?', hint: 'Lean on a quote' },
+    { cat: 'Explain', text: 'Why is the sky blue? (explain to a child)', hint: 'Simple, visual, no jargon' },
+    { cat: 'Explain', text: 'How does a search engine work?', hint: 'Start with an analogy' },
+    { cat: 'Explain', text: 'Explain photosynthesis in 1 minute', hint: 'Sun → water → energy' },
+    { cat: 'Explain', text: 'What is climate change?', hint: 'Cause → effect → solution' },
+    { cat: 'Explain', text: 'How to learn a foreign language', hint: 'Concrete, progressive method' },
+    { cat: 'Argue', text: 'Homework: for or against?', hint: 'Pick a side and own it' },
+    { cat: 'Argue', text: 'Should there be universal basic income?', hint: 'Economic AND social arguments' },
+    { cat: 'Argue', text: 'Should zoos be banned?', hint: 'Animal welfare vs conservation' },
+    { cat: 'Argue', text: 'Compulsory voting: good or bad idea?', hint: 'Individual freedom vs civic duty' },
+    { cat: 'Argue', text: 'Should plastic use be limited?', hint: 'Practicality vs ecology' },
+  ]
+};
+
+let lang = localStorage.getItem('oratron-lang') || 'fr';
+let timerRunning = false;
+let timerSeconds = 120;
+let timerInterval = null;
+let topicCount = parseInt(localStorage.getItem('topic-count') || '0');
+let history = JSON.parse(localStorage.getItem('topic-history') || '[]');
+
+function pickTopic() {
+  const topics = TOPICS[lang];
+  const idx = Math.floor(Math.random() * topics.length);
+  const t = topics[idx];
+  document.getElementById('topic-cat').textContent = t.cat;
+  document.getElementById('topic-text').textContent = t.text;
+  document.getElementById('topic-hint').textContent = t.hint;
+  topicCount++;
+  localStorage.setItem('topic-count', topicCount);
+  document.querySelector('#stat-total').innerHTML = topicCount + ' <span data-i18n="statTopics">' + L[lang].statTopics + '</span>';
+
+  history.unshift({ cat: t.cat, text: t.text.length > 50 ? t.text.substring(0, 50) + '…' : t.text });
+  if (history.length > 10) history.pop();
+  localStorage.setItem('topic-history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history');
+  if (history.length === 0) {
+    el.innerHTML = '<h3 data-i18n="history">' + L[lang].history + '</h3><div style="color:#444;font-size:.78em;padding:8px 0;">' + (lang === 'fr' ? 'Aucun sujet encore' : 'No topics yet') + '</div>';
+    return;
+  }
+  el.innerHTML = '<h3 data-i18n="history">' + L[lang].history + '</h3>' +
+    history.map(h => '<div class="entry"><span class="cat">' + h.cat + '</span> ' + h.text + '</div>').join('');
+}
+
+function stopTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerSeconds = 120;
+  document.getElementById('timer-display').textContent = '2:00';
+  document.getElementById('timer-fill').style.width = '0%';
+  document.getElementById('btn-timer').innerHTML = '⏱ <span data-i18n="timerBtn">' + L[lang].timerBtn + '</span>';
+}
+
+function toggleTimer() {
+  if (timerRunning) { stopTimer(); return; }
+  timerRunning = true;
+  timerSeconds = 120;
+  document.getElementById('btn-timer').innerHTML = '⏹ <span data-i18n="stopTimer">' + (L[lang].stopTimer || 'Stop') + '</span>';
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    const m = String(Math.floor(timerSeconds/60)).padStart(2,'0');
+    const s = String(timerSeconds%60).padStart(2,'0');
+    document.getElementById('timer-display').textContent = m + ':' + s;
+    document.getElementById('timer-fill').style.width = ((120 - timerSeconds)/120*100) + '%';
+    if (timerSeconds <= 0) { stopTimer(); document.getElementById('timer-display').textContent = '⏰ 0:00'; }
+  }, 1000);
+}
+
+function applyLang(l) {
+  lang = l;
+  localStorage.setItem('oratron-lang', l);
+  document.querySelectorAll('.lang-toggle span').forEach(s => s.classList.toggle('active', s.dataset.lang === l));
+  const d = L[l];
+  document.getElementById('title-text').textContent = d.title;
+  document.getElementById('sub-text').textContent = d.sub;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (d[k]) el.textContent = d[k];
+  });
+  if (timerRunning) {
+    document.getElementById('btn-timer').innerHTML = '⏹ <span>' + (d.stopTimer || 'Stop') + '</span>';
+  } else {
+    document.getElementById('btn-timer').innerHTML = '⏱ <span>' + d.timerBtn + '</span>';
+  }
+  document.querySelector('#stat-total').innerHTML = topicCount + ' <span>' + d.statTopics + '</span>';
+  renderHistory();
+}
+
+document.getElementById('btn-new').onclick = pickTopic;
+document.getElementById('btn-timer').onclick = toggleTimer;
+document.getElementById('lang-toggle').onclick = () => {
+  applyLang(lang === 'fr' ? 'en' : 'fr');
+  pickTopic();
+};
+
+// Init
+applyLang(lang);
+pickTopic();
+</script>
+</body>
+</html>

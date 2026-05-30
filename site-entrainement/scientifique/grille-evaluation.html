@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grille d'évaluation · OSCAR-S</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #050508; color: #e0e0e0; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050508; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #4fc3f7, #0288d1); border-radius: 3px; }
+.container { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+header { padding: 30px 20px 10px; border-bottom: 1px solid rgba(79,195,247,.08); margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+header h1 { font-size: 1.3em; font-weight: 900; }
+header h1 span { color: #4fc3f7; }
+header a { color: #4fc3f7; text-decoration: none; font-size: .8em; }
+header a:hover { text-decoration: underline; }
+header .score-display { font-size: 1.8em; font-weight: 900; color: #4fc3f7; }
+
+.lang-toggle { display: flex; gap: 4px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 3px; cursor: pointer; }
+.lang-toggle span { padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600; letter-spacing: .5px; transition: .3s; color: #555; }
+.lang-toggle span.active { background: #4fc3f7; color: #fff; }
+
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.controls button { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #ccc; padding: 8px 14px; border-radius: 8px; font-size: .82em; cursor: pointer; transition: .3s; }
+.controls button:hover { background: rgba(79,195,247,.12); border-color: #4fc3f7; color: #fff; }
+.controls button.danger { border-color: #e53935; color: #e53935; }
+.controls button.danger:hover { background: rgba(229,57,53,.12); }
+.controls .info { color: #555; font-size: .78em; display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+th { text-align: left; padding: 10px 8px; font-size: .75em; text-transform: uppercase; letter-spacing: 1px; color: #555; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.05); }
+td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,.03); font-size: .85em; vertical-align: top; }
+tr:hover td { background: rgba(79,195,247,.015); }
+td.cat { font-weight: 600; color: #4fc3f7; font-size: .72em; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; width: 100px; }
+td.criterion { min-width: 0; }
+td.criterion .desc { font-size: .78em; color: #777; margin-top: 2px; line-height: 1.4; }
+td.score { width: 40px; text-align: center; }
+
+input[type="range"] { -webkit-appearance: none; width: 80px; height: 4px; background: rgba(255,255,255,.1); border-radius: 2px; outline: none; transition: .2s; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #4fc3f7; cursor: pointer; border: none; }
+input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #4fc3f7; cursor: pointer; border: none; }
+
+.total-row td { border-top: 2px solid rgba(79,195,247,.15); padding-top: 14px; font-weight: 700; }
+.total-row .total-score { color: #4fc3f7; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .7em; font-weight: 600; }
+.badge.vert { background: rgba(76,175,80,.15); color: #66bb6a; }
+.badge.jaune { background: rgba(255,193,7,.15); color: #ffd54f; }
+.badge.rouge { background: rgba(229,57,53,.15); color: #e57373; }
+
+.note { background: rgba(255,255,255,.02); border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: .82em; color: #888; line-height: 1.6; }
+.note strong { color: #4fc3f7; }
+
+footer { text-align: center; padding: 30px 20px; color: #444; font-size: .72em; border-top: 1px solid rgba(255,255,255,.03); margin-top: 30px; }
+footer a { color: #4fc3f7; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>📋 <span>Grille d'évaluation</span> OSCAR-S</h1>
+      <div style="display:flex;gap:16px;margin-top:6px;font-size:.78em">
+        <span style="color:#888" data-i18n="total">Total</span>
+        <span id="total-display" style="font-weight:700;color:#4fc3f7">—</span>
+        <span id="badge-display"></span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" data-i18n="back">← Retour</a>
+      <div class="lang-toggle" id="lang-toggle">
+        <span class="active" data-lang="fr">FR</span>
+        <span data-lang="en">EN</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button id="reset-btn" class="danger" data-i18n="reset">🗑 Réinitialiser</button>
+    <span class="info" data-i18n="save">💾 Scores sauvegardés automatiquement</span>
+  </div>
+
+  <div class="note" data-i18n="note">
+    <strong>Comment utiliser :</strong> Chaque critère est noté de 1 à 5. Le total sur 100 donne le niveau OSCAR-S.
+    <br><strong>0-40 :</strong> Débutant · <strong>41-65 :</strong> Intermédiaire · <strong>66-85 :</strong> Avancé · <strong>86-100 :</strong> Expert
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th data-i18n="cat">Catégorie</th>
+        <th data-i18n="criterion">Critère</th>
+        <th style="text-align:center;width:120px" data-i18n="score">Note</th>
+      </tr>
+    </thead>
+    <tbody id="grid-body"></tbody>
+  </table>
+
+  <footer>
+    <p data-i18n="footer">OSCAR-S — <a href="../index.html">Oratron</a> · Grille d'évaluation interactive</p>
+  </footer>
+</div>
+
+<script>
+const L = { fr: { back: '← Retour', total: 'Total', reset: '🗑 Réinitialiser', save: '💾 Scores sauvegardés automatiquement', cat: 'Catégorie', criterion: 'Critère', score: 'Note', beginner: 'Débutant', intermediate: 'Intermédiaire', advanced: 'Avancé', expert: 'Expert', note: '<strong>Comment utiliser :</strong> Chaque critère est noté de 1 à 5. Le total sur 100 donne le niveau OSCAR-S.<br><strong>0-40 :</strong> Débutant · <strong>41-65 :</strong> Intermédiaire · <strong>66-85 :</strong> Avancé · <strong>86-100 :</strong> Expert', footer: 'OSCAR-S — Oratron · Grille d\'évaluation interactive' }, en: { back: '← Back', total: 'Total', reset: '🗑 Reset', save: '💾 Scores auto-saved', cat: 'Category', criterion: 'Criterion', score: 'Score', beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', expert: 'Expert', note: '<strong>How to use:</strong> Each criterion is scored 1-5. Total out of 100 gives OSCAR-S level.<br><strong>0-40:</strong> Beginner · <strong>41-65:</strong> Intermediate · <strong>66-85:</strong> Advanced · <strong>86-100:</strong> Expert', footer: 'OSCAR-S — Oratron · Interactive evaluation grid' } };
+
+const CRITERIA = [
+  { cat: 'O', label_fr: 'Objectif', label_en: 'Objective', items: [
+    { name_fr: 'Clarté de l\'objectif', name_en: 'Clarity of objective', desc_fr: 'Le public sait immédiatement ce qu\'il va apprendre', desc_en: 'Audience immediately knows what they will learn' },
+    { name_fr: 'Pertinence du contexte', name_en: 'Context relevance', desc_fr: 'Le problème est bien posé et justifié', desc_en: 'The problem is well stated and justified' },
+    { name_fr: 'Délimitation du sujet', name_en: 'Scope definition', desc_fr: 'Périmètre clair : ce qui est dit et ce qui ne l\'est pas', desc_en: 'Clear scope: what is and isn\'t covered' },
+    { name_fr: 'Annonce du plan', name_en: 'Roadmap announcement', desc_fr: 'Structure annoncée en début de présentation', desc_en: 'Structure announced at the beginning' },
+  ]},
+  { cat: 'S', label_fr: 'Structure', label_en: 'Structure', items: [
+    { name_fr: 'Introduction', name_en: 'Introduction', desc_fr: 'Accroche + contexte + plan', desc_en: 'Hook + context + roadmap' },
+    { name_fr: 'Développement logique', name_en: 'Logical flow', desc_fr: 'Idées enchaînées naturellement, transitions visibles', desc_en: 'Ideas flow naturally, visible transitions' },
+    { name_fr: 'Gestion du temps', name_en: 'Time management', desc_fr: 'Respect du temps imparti, équilibre des parties', desc_en: 'Respects allocated time, balanced parts' },
+    { name_fr: 'Conclusion', name_en: 'Conclusion', desc_fr: 'Synthèse + message clé + ouverture', desc_en: 'Summary + key message + outlook' },
+  ]},
+  { cat: 'C', label_fr: 'Clarté', label_en: 'Clarity', items: [
+    { name_fr: 'Vocabulaire adapté', name_en: 'Appropriate vocabulary', desc_fr: 'Niveau de langage adapté au public', desc_en: 'Language level adapted to audience' },
+    { name_fr: 'Analogies et exemples', name_en: 'Analogies and examples', desc_fr: 'Utilisation d\'images parlantes pour concepts complexes', desc_en: 'Uses vivid images for complex concepts' },
+    { name_fr: 'Aides visuelles', name_en: 'Visual aids', desc_fr: 'Slides lisibles, pas surchargées, commentées', desc_en: 'Readable slides, not overloaded, commented' },
+    { name_fr: 'Message clé retenu', name_en: 'Key message retention', desc_fr: 'L\'auditeur peut répéter l\'idée principale', desc_en: 'Listener can repeat the main idea' },
+  ]},
+  { cat: 'A', label_fr: 'Assurance', label_en: 'Assurance', items: [
+    { name_fr: 'Posture et gestuelle', name_en: 'Posture and gestures', desc_fr: 'Debout, mains visibles, gestes ouverts', desc_en: 'Standing, hands visible, open gestures' },
+    { name_fr: 'Regard et contact visuel', name_en: 'Eye contact', desc_fr: 'Regarde le public / la caméra, ne lit pas', desc_en: 'Looks at audience/camera, doesn\'t read' },
+    { name_fr: 'Voix et débit', name_en: 'Voice and pace', desc_fr: 'Volume suffisant, débit modéré, variation tonale', desc_en: 'Sufficient volume, moderate pace, tonal variety' },
+    { name_fr: 'Respiration', name_en: 'Breathing', desc_fr: 'Pas d\'essoufflement, phrases terminées', desc_en: 'No breathlessness, completed sentences' },
+  ]},
+  { cat: 'R', label_fr: 'Réponse', label_en: 'Response', items: [
+    { name_fr: 'Écoute active', name_en: 'Active listening', desc_fr: 'Reformule la question avant de répondre', desc_en: 'Paraphrases the question before answering' },
+    { name_fr: 'PRRLO appliqué', name_en: 'PRRLO applied', desc_fr: 'Les 5 étapes visibles dans les réponses', desc_en: '5 steps visible in responses' },
+    { name_fr: 'Gestion des questions difficiles', name_en: 'Handling tough questions', desc_fr: 'Ne se démonte pas, répond avec calme', desc_en: 'Doesn\'t get flustered, answers calmly' },
+    { name_fr: 'Admission des limites', name_en: 'Admitting limits', desc_fr: 'Sait dire "je ne sais pas" sans perdre en crédibilité', desc_en: 'Can say "I don\'t know" without losing credibility' },
+  ]},
+  { cat: 'S', label_fr: 'Style', label_en: 'Style', items: [
+    { name_fr: 'Phrases d\'ouverture', name_en: 'Opening lines', desc_fr: 'Phrase-marteau, accroche mémorable', desc_en: 'Hammer sentence, memorable hook' },
+    { name_fr: 'Transitions', name_en: 'Transitions', desc_fr: 'Liens entre les parties, "maintenant que...", "passons à..."', desc_en: 'Links between parts, "now that...", "let\'s move to..."' },
+    { name_fr: 'Éloquence et rythme', name_en: 'Eloquence and rhythm', desc_fr: 'Silences, pauses, variations de débit', desc_en: 'Silences, pauses, pace variations' },
+    { name_fr: 'Authenticité', name_en: 'Authenticity', desc_fr: 'Semble naturel, pas récité', desc_en: 'Seems natural, not rehearsed' },
+  ]},
+];
+
+let lang = localStorage.getItem('oratron-lang') || 'fr';
+const STORAGE_KEY = 'oscar-grid';
+
+function createGrid() {
+  const tbody = document.getElementById('grid-body');
+  let html = '';
+  CRITERIA.forEach(g => {
+    g.items.forEach((item, i) => {
+      const key = `${g.cat}-${i}`;
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const val = saved[key] || 3;
+      const catLabel = i === 0 ? `${g.cat} — ${lang === 'fr' ? g.label_fr : g.label_en}` : '';
+      html += `<tr data-key="${key}">
+        <td class="cat">${catLabel}</td>
+        <td class="criterion">
+          ${lang === 'fr' ? item.name_fr : item.name_en}
+          <div class="desc">${lang === 'fr' ? item.desc_fr : item.desc_en}</div>
+        </td>
+        <td class="score">
+          <input type="range" min="1" max="5" step="1" value="${val}" data-key="${key}" oninput="updateScore(this)">
+          <div style="font-size:.7em;color:#555;margin-top:2px" id="label-${key}">${val}/5</div>
+        </td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = html;
+  updateTotal();
+}
+
+function updateScore(el) {
+  const key = el.dataset.key;
+  const val = parseInt(el.value);
+  document.getElementById(`label-${key}`).textContent = `${val}/5`;
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  saved[key] = val;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  updateTotal();
+}
+
+function updateTotal() {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  let sum = 0;
+  let count = 0;
+  CRITERIA.forEach(g => g.items.forEach((_, i) => {
+    const key = `${g.cat}-${i}`;
+    sum += saved[key] || 3;
+    count++;
+  }));
+  const total = sum;
+  const pct = Math.round((sum / (count * 5)) * 100);
+  document.getElementById('total-display').textContent = `${sum}/${count * 5}`;
+  const badge = document.getElementById('badge-display');
+  if (pct <= 40) badge.innerHTML = `<span class="badge rouge">${lang === 'fr' ? 'Débutant' : 'Beginner'} (${pct}%)</span>`;
+  else if (pct <= 65) badge.innerHTML = `<span class="badge jaune">${lang === 'fr' ? 'Intermédiaire' : 'Intermediate'} (${pct}%)</span>`;
+  else if (pct <= 85) badge.innerHTML = `<span class="badge vert">${lang === 'fr' ? 'Avancé' : 'Advanced'} (${pct}%)</span>`;
+  else badge.innerHTML = `<span class="badge vert">${lang === 'fr' ? 'Expert' : 'Expert'} (${pct}%)</span>`;
+}
+
+function resetScores() {
+  if (!confirm(lang === 'fr' ? 'Réinitialiser tous les scores ?' : 'Reset all scores?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  createGrid();
+  updateTotal();
+}
+
+document.getElementById('reset-btn').addEventListener('click', resetScores);
+
+document.getElementById('lang-toggle').onclick = () => {
+  lang = lang === 'fr' ? 'en' : 'fr';
+  localStorage.setItem('oratron-lang', lang);
+  document.querySelectorAll('.lang-toggle span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+  // rebuild grid (labels + cat change)
+  // Save current scores first
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  createGrid();
+};
+
+createGrid();
+</script>
+</body>
+</html>

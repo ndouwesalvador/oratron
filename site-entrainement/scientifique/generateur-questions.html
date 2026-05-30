@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur de questions · OSCAR-S</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #050508; color: #e0e0e0; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050508; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #4fc3f7, #0288d1); border-radius: 3px; }
+.container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+
+header { padding: 30px 20px 10px; border-bottom: 1px solid rgba(79,195,247,.08); margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+header h1 { font-size: 1.3em; font-weight: 900; }
+header h1 span { color: #4fc3f7; }
+header a { color: #4fc3f7; text-decoration: none; font-size: .8em; }
+header a:hover { text-decoration: underline; }
+
+.lang-toggle { display: flex; gap: 4px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 3px; cursor: pointer; }
+.lang-toggle span { padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600; letter-spacing: .5px; transition: .3s; color: #555; }
+.lang-toggle span.active { background: #4fc3f7; color: #fff; }
+
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
+.controls select, .controls button { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #ccc; padding: 8px 14px; border-radius: 8px; font-size: .82em; cursor: pointer; transition: .3s; }
+.controls select:focus { outline: none; border-color: #4fc3f7; }
+.controls button:hover { background: rgba(79,195,247,.12); border-color: #4fc3f7; color: #fff; }
+.controls button.primary { background: #4fc3f7; color: #050508; font-weight: 700; border-color: #4fc3f7; }
+.controls button.primary:hover { background: #39b0e4; }
+.controls .count { color: #555; font-size: .78em; margin-left: auto; }
+
+.question-card { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04); border-radius: 14px; padding: 20px; margin-bottom: 14px; animation: fadeUp .3s ease; }
+.question-card .cat { font-size: .7em; text-transform: uppercase; letter-spacing: 2px; color: #4fc3f7; font-weight: 600; }
+.question-card .q { font-size: 1em; font-weight: 500; margin: 6px 0 4px; line-height: 1.5; }
+.question-card .prrlo { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.04); font-size: .82em; color: #888; line-height: 1.6; }
+.question-card .prrlo strong { color: #4fc3f7; }
+.question-card .prrlo.show { display: block; }
+.question-card .actions { display: flex; gap: 8px; margin-top: 10px; }
+.question-card .actions button { background: none; border: none; color: #555; font-size: .72em; cursor: pointer; transition: .3s; padding: 3px 8px; border-radius: 6px; }
+.question-card .actions button:hover { color: #4fc3f7; background: rgba(79,195,247,.08); }
+
+.timer-box { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,.02); border-radius: 10px; margin-bottom: 20px; }
+.timer-box .time { font-size: 1.4em; font-weight: 700; font-variant-numeric: tabular-nums; color: #4fc3f7; min-width: 60px; }
+.timer-box button { background: none; border: 1px solid rgba(255,255,255,.08); color: #888; font-size: .72em; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+.timer-box button:hover { border-color: #4fc3f7; color: #fff; }
+.timer-box button.running { border-color: #e53935; color: #e53935; }
+.timer-box button:disabled { opacity: .4; cursor: default; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+footer { text-align: center; padding: 30px 20px; color: #444; font-size: .72em; border-top: 1px solid rgba(255,255,255,.03); margin-top: 30px; }
+footer a { color: #4fc3f7; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🎯 <span>Questions</span> OSCAR-S</h1>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" data-i18n="back">← Retour</a>
+      <div class="lang-toggle" id="lang-toggle">
+        <span class="active" data-lang="fr">FR</span>
+        <span data-lang="en">EN</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="timer-box">
+    <span style="font-size:.75em;color:#555;min-width:40px" data-i18n="timer">Timer</span>
+    <span class="time" id="timer-display">00:30</span>
+    <button id="timer-start" data-i18n="start">Start</button>
+    <button id="timer-reset" data-i18n="reset">Reset</button>
+    <span style="font-size:.72em;color:#555" data-i18n="presets">Presets :</span>
+    <button onclick="setTimer(30)">30s</button>
+    <button onclick="setTimer(60)">1 min</button>
+    <button onclick="setTimer(120)">2 min</button>
+  </div>
+
+  <div class="controls">
+    <select id="cat-filter">
+      <option value="all" data-i18n="all">Toutes catégories</option>
+      <option value="methodologie">Méthodologie</option>
+      <option value="technique">Technique</option>
+      <option value="impact">Impact / Application</option>
+      <option value="limite">Limites / Critique</option>
+      <option value="general">Général</option>
+    </select>
+    <button class="primary" id="shuffle-btn" data-i18n="draw">🎲 Tirer 3 questions</button>
+    <span class="count" id="count-display">0 questions</span>
+  </div>
+
+  <div id="questions-list"></div>
+
+  <footer>
+    <p data-i18n="footer">OSCAR-S — <a href="../index.html">Oratron</a> · Entraînement aux questions de jury</p>
+  </footer>
+</div>
+
+<script>
+const CATS = { methodologie: 'Méthodologie', technique: 'Technique', impact: 'Impact / Application', limite: 'Limites / Critique', general: 'Général' };
+
+const QUESTIONS = [
+  { cat: 'methodologie', q_fr: 'Quelle est votre contribution originale par rapport à l\'état de l\'art ?', q_en: 'What is your original contribution compared to the state of the art?', prrlo_fr: 'P: "Vous me demandez ce qui distingue mon travail."<br>R: "C\'est au cœur de ma thèse."<br>R: "Notre jet EM atteint FWHM=0.15λ, ce qui n\'avait jamais été montré."<br>L: "Dans des conditions spécifiques de géométrie."<br>O: "Ce résultat ouvre la voie à des capteurs sans contact haute résolution."' },
+  { cat: 'methodologie', q_fr: 'Pourquoi avoir choisi la simulation plutôt que l\'expérimentation ?', q_en: 'Why did you choose simulation over experimentation?', prrlo_fr: 'P: "Vous me demandez pourquoi pas d\'expé."<br>R: "C\'est une question pertinente."<br>R: "La simulation permet une exploration paramétrique rapide."<br>L: "Les mesures sont en cours de préparation."<br>O: "On prévoit une validation expérimentale dans les 6 mois."' },
+  { cat: 'methodologie', q_fr: 'Comment validez-vous vos résultats de simulation ?', q_en: 'How do you validate your simulation results?', prrlo_fr: 'P: "Vous me demandez la fiabilité des simulations."<br>R: "Question essentielle en électromagnétisme."<br>R: "Convergence de maillage, solveur adaptatif, comparaison avec la théorie."<br>L: "On n\'a pas encore de mesures réelles."<br>O: "Prochaine étape : banc de mesure."' },
+  { cat: 'methodologie', q_fr: 'Quel solveur avez-vous utilisé et pourquoi ?', q_en: 'Which solver did you use and why?', prrlo_fr: 'P: "Vous voulez savoir mon choix logiciel."<br>R: "Important pour reproductibilité."<br>R: "HFSS solveur FEM car meilleure précision pour structures fines."<br>L: "Plus lent que FDTD pour les larges bandes."<br>O: "On compare avec CST pour confirmation."' },
+  { cat: 'methodologie', q_fr: 'Comment choisissez-vous le maillage ?', q_en: 'How do you choose the mesh?', prrlo_fr: 'P: "Vous me demandez mon critère de maillage."<br>R: "Bonne question pratique."<br>R: "Maillage adaptatif, λ/20 dans la zone d\'intérêt, convergence à 1%."<br>L: "Ça augmente le temps de calcul."<br>O: "C\'est un compromis précision/temps."' },
+  { cat: 'technique', q_fr: 'Pourquoi un guide circulaire plutôt que rectangulaire ?', q_en: 'Why a circular waveguide instead of rectangular?', prrlo_fr: 'P: "Choix du guide."<br>R: "Était-ce arbitraire ? Non."<br>R: "Symétrie de champ meilleure pour le jet EM."<br>L: "Polarisation moins contrôlée."<br>O: "On étudie des transitions circulaire-rectangulaire."' },
+  { cat: 'technique', q_fr: 'Quel est le mécanisme physique qui crée le jet EM ?', q_en: 'What physical mechanism creates the EM jet?', prrlo_fr: 'P: "Le mécanisme."<br>R: "Question fondamentale."<br>R: "Résonance de galerie dans la structure diélectrique courbe."<br>L: "On n\'a pas de modèle analytique complet."<br>O: "Un modèle simplifié est en développement."' },
+  { cat: 'technique', q_fr: 'Comment mesure-t-on expérimentalement le FWHM ?', q_en: 'How do you experimentally measure FWHM?', prrlo_fr: 'P: "Mesure de FWHM."<br>R: "Excellente question de métrologue."<br>R: "Scanner de champ proche, sonde haute résolution."<br>L: "La sonde perturbe le champ mesuré."<br>O: "On travaille sur une sonde non-invasive."' },
+  { cat: 'technique', q_fr: 'Quelle est la sensibilité de Zmax à la fréquence ?', q_en: 'What is the sensitivity of Zmax to frequency?', prrlo_fr: 'P: "Vous voulez savoir si Zmax varie."<br>R: "Question fine."<br>R: "Zmax varie quasi-linéairement avec λ."<br>L: "Sur 1% de bande, négligeable."<br>O: "C\'est une info clé pour la conception."' },
+  { cat: 'technique', q_fr: 'Quelle puissance peut supporter votre structure ?', q_en: 'What power can your structure handle?', prrlo_fr: 'P: "Question tenue en puissance."<br>R: "Critique pour application radar."<br>R: "Jusqu\'à 10W en continu, pertes < 0.5dB."<br>L: "Pas testé au-delà."<br>O: "Des tests destructifs sont prévus."' },
+  { cat: 'technique', q_fr: 'Quelle est la bande passante de votre jet EM ?', q_en: 'What is the bandwidth of your EM jet?', prrlo_fr: 'P: "Bande passante."<br>R: "Question clé pour applicabilité."<br>R: "~5% autour de 10GHz pour FWHM<0.2λ."<br>L: "Hors bande, le jet se dégrade."<br>O: "On explore des métasurfaces large bande."' },
+  { cat: 'technique', q_fr: 'Quel est le rendement énergétique de votre dispositif ?', q_en: 'What is the energy efficiency of your device?', prrlo_fr: 'P: "Rendement."<br>R: "Pertinent pour applications embarquées."<br>R: "~80% d\'efficacité de transmission."<br>L: "Mesuré en simulation uniquement."<br>O: "Des mesures en guide d\'onde confirmeront."' },
+  { cat: 'impact', q_fr: 'Quelle est l\'application industrielle la plus prometteuse ?', q_en: 'What is the most promising industrial application?', prrlo_fr: 'P: "Application principale."<br>R: "Pourquoi faire ce travail sinon."<br>R: "CND de matériaux composites dans l\'aéronautique."<br>L: "Nécessite un prototype robuste."<br>O: "En discussion avec un partenaire aéro."' },
+  { cat: 'impact', q_fr: 'Comment votre travail s\'inscrit dans le contexte photovoltaïque ?', q_en: 'How does your work fit in the photovoltaic context?', prrlo_fr: 'P: "Lien avec PV."<br>R: "Bonne question de transdisciplinarité."<br>R: "Contrôle qualité de cellules PV par CND micro-onde."<br>L: "Pas encore testé sur cellules réelles."<br>O: "Une collaboration avec un labo PV est en cours."' },
+  { cat: 'impact', q_fr: 'Quel est le TRL actuel de votre technologie ?', q_en: 'What is the current TRL of your technology?', prrlo_fr: 'P: "Niveau de maturité."<br>R: "Question réaliste."<br>R: "TRL 3-4 : validé en environnement laboratoire."<br>L: "Pas encore en environnement réel."<br>O: "Prochain objectif : TRL 5 avec démonstrateur."' },
+  { cat: 'impact', q_fr: 'Quel est le coût estimé de votre capteur ?', q_en: 'What is the estimated cost of your sensor?', prrlo_fr: 'P: "Coût."<br>R: "Crucial pour industrialisation."<br>R: "< 100€ en volume pour la tête de mesure."<br>L: "Sans l\'électronique de contrôle."<br>O: "C\'est compétitif face aux solutions optiques."' },
+  { cat: 'impact', q_fr: 'Qui sont vos concurrents et quels sont leurs résultats ?', q_en: 'Who are your competitors and what are their results?', prrlo_fr: 'P: "Concurrence."<br>R: "Je connais bien le paysage."<br>R: "Équipe X à FWHM=0.2λ, équipe Y à 0.18λ, nous à 0.15λ."<br>L: "Dans des conditions différentes."<br>O: "Notre avantage c\'est la simplicité de la structure."' },
+  { cat: 'impact', q_fr: 'Quelle est la durée de vie de votre dispositif ?', q_en: 'What is the lifespan of your device?', prrlo_fr: 'P: "Durée de vie."<br>R: "Question d\'ingénieur."<br>R: "Structure passive, pas d\'usure mécanique."<br>L: "Sensibilité aux conditions environnementales."<br>O: "Des tests de vieillissement accéléré sont en cours."' },
+  { cat: 'limite', q_fr: 'Quelle est la principale limite de votre approche ?', q_en: 'What is the main limitation of your approach?', prrlo_fr: 'P: "Limite principale."<br>R: "Je préfère être transparent."<br>R: "Bande étroite : seulement 5% autour de 10GHz."<br>L: "C\'est une limitation physique de la résonance."<br>O: "Notre priorité : élargir la bande."' },
+  { cat: 'limite', q_fr: 'Votre résultat est contradictoire avec la publication de X. Comment expliquez-vous ?', q_en: 'Your result contradicts publication X. How do you explain?', prrlo_fr: 'P: "Contradiction apparente."<br>R: "J\'ai étudié cette différence."<br>R: "Ils utilisent une structure différente (ouverte vs guidée)."<br>L: "Nos conditions sont différentes."<br>O: "Les deux approches sont complémentaires."' },
+  { cat: 'limite', q_fr: 'Votre maillage est-il suffisamment fin ?', q_en: 'Is your mesh fine enough?', prrlo_fr: 'P: "Qualité du maillage."<br>R: "Justifié."<br>R: "Convergence vérifiée : variation <1% au-delà de 200k tétraèdres."<br>L: "On pourrait pousser à 500k."<br>O: "Le rapport précision/temps est bon à 200k."' },
+  { cat: 'limite', q_fr: 'Avez-vous envisagé une autre méthode de simulation ?', q_en: 'Have you considered another simulation method?', prrlo_fr: 'P: "Alternative."<br>R: "Oui, bien sûr."<br>R: "FDTD pour la large bande, mais moins précis."<br>L: "Chaque méthode a ses avantages."<br>O: "Une comparaison HFSS/FDTD est en cours."' },
+  { cat: 'limite', q_fr: 'Votre structure est-elle fabriquable ?', q_en: 'Is your structure manufacturable?', prrlo_fr: 'P: "Fabrication."<br>R: "Question d\'industrialisation."<br>R: "Oui, en PCB standard ou LTCC."<br>L: "Tolérances de ±10µm requises."<br>O: "Un prototype a été fabriqué par fraisage CNC."' },
+  { cat: 'limite', q_fr: 'Que se passe-t-il si l\'échantillon n\'est pas exactement à Zmax ?', q_en: 'What happens if the sample is not exactly at Zmax?', prrlo_fr: 'P: "Sensibilité au positionnement."<br>R: "Question d\'applicabilité réelle."<br>R: "FWHM augmente de 10% pour ±0.5mm de décalage."<br>L: "C\'est une contrainte forte."<br>O: "On conçoit un guide de positionnement mécanique."' },
+  { cat: 'limite', q_fr: 'Pourquoi n\'avez-vous pas de résultats expérimentaux ?', q_en: 'Why don\'t you have experimental results?', prrlo_fr: 'P: "Absence de mesures."<br>R: "Question légitime."<br>R: "Le banc de mesure est en cours de montage."<br>L: "C\'est un travail de simulation pour l\'instant."<br>O: "Premiers résultats expérimentaux prévus dans 3 mois."' },
+  { cat: 'general', q_fr: 'Pourquoi avoir choisi ce sujet de thèse ?', q_en: 'Why did you choose this thesis topic?', prrlo_fr: 'P: "Motivation personnelle."<br>R: "Bonne question introspective."<br>R: "Pont entre physique fondamentale et application concrète."<br>L: "C\'est un domaine exigeant mais passionnant."<br>O: "Et le potentiel applicatif est énorme."' },
+  { cat: 'general', q_fr: 'Qu\'avez-vous appris de plus important durant cette recherche ?', q_en: 'What was the most important thing you learned?', prrlo_fr: 'P: "Apprentissage clé."<br>R: "Beaucoup de choses."<br>R: "La simulation ne remplace pas la compréhension physique."<br>L: "J\'ai dû revenir aux équations."<br>O: "C\'est une leçon qui guide mon travail maintenant."' },
+  { cat: 'general', q_fr: 'Quelle est la prochaine étape de votre recherche ?', q_en: 'What is the next step of your research?', prrlo_fr: 'P: "Suite du projet."<br>R: "On a déjà des pistes."<br>R: "Validation expérimentale + élargissement de bande."<br>L: "Deux ans de travail minimum."<br>O: "Et ensuite un démonstrateur pré-industriel."' },
+  { cat: 'general', q_fr: 'Qu\'est-ce qui vous passionne dans l\'enseignement ?', q_en: 'What excites you about teaching?', prrlo_fr: 'P: "Passion d\'enseigner."<br>R: "Belle question."<br>R: "Transmettre la rigueur et l\'émerveillement scientifique."<br>L: "C\'est un métier qui s\'apprend."<br>O: "Je veux former la prochaine génération."' },
+  { cat: 'general', q_fr: 'Quel est votre plus grand échec et qu\'en avez-vous retenu ?', q_en: 'What was your biggest failure and what did you learn?', prrlo_fr: 'P: "Échec."<br>R: "Puisque vous le demandez."<br>R: "J\'ai passé 3 mois sur une structure qui ne marchait pas."<br>L: "J\'ai mal interprété un résultat."<br>O: "J\'ai appris à vérifier toutes les hypothèses."' },
+  { cat: 'general', q_fr: 'Comment voyez-vous votre carrière dans 5 ans ?', q_en: 'Where do you see your career in 5 years?', prrlo_fr: 'P: "Projet de carrière."<br>R: "Question qui fait réfléchir."<br>R: "Chercheur en CND micro-onde dans un labo applicatif."<br>L: "Peut-être en R&D industrielle."<br>O: "Toujours en lien avec la pédagogie."' },
+  { cat: 'general', q_fr: 'Quelle est la question que vous espériez ne pas avoir ?', q_en: 'What question were you hoping not to get?', prrlo_fr: 'P: "Question piège."<br>R: "Je préfère y répondre franchement."<br>R: "La validation expérimentale pas encore faite."<br>L: "C\'est mon point faible actuel."<br>O: "Mais les résultats sont en préparation."' },
+  { cat: 'general', q_fr: 'Pourquoi devrions-nous financer votre prochain projet ?', q_en: 'Why should we fund your next project?', prrlo_fr: 'P: "Appel à financement."<br>R: "Je vais être direct."<br>R: "Rapport coût/bénéfice exceptionnel : <100€/capteur."<br>L: "Risque technique raisonnable."<br>O: "Marché potentiel : millions d\'unités en CND."' },
+  { cat: 'general', q_fr: 'Que répondriez-vous à un collègue qui critique votre méthode ?', q_en: 'How would you respond to a colleague criticizing your method?', prrlo_fr: 'P: "Critique de méthode."<br>R: "Les critiques sont constructives."<br>R: "Je demanderais des précisions et montrerais mes données."<br>L: "Toute méthode a des limites."<br>O: "Je suis ouvert à améliorer l\'approche."' },
+  { cat: 'general', q_fr: 'Quelle compétence souhaitez-vous développer le plus actuellement ?', q_en: 'Which skill do you most want to develop?', prrlo_fr: 'P: "Compétence cible."<br>R: "Question d\'humilité."<br>R: "La communication orale, justement."<br>L: "C\'est pour ça que je suis dans ce programme."<br>O: "Pour mieux partager ma science."' },
+  { cat: 'general', q_fr: 'Comment expliquez-vous votre travail à vos parents ?', q_en: 'How do you explain your work to your parents?', prrlo_fr: 'P: "Version grand public."<br>R: "Le test ultime de vulgarisation."<br>R: "Je fabrique une loupe spéciale pour voir l\'invisible."<br>L: "Ça simplifie un peu."<br>O: "Mais l\'idée générale est là."' },
+  { cat: 'general', q_fr: 'Quelle est votre routine de travail quotidienne ?', q_en: 'What is your daily work routine?', prrlo_fr: 'P: "Routine."<br>R: "Question terre-à-terre."<br>R: "Simulation le matin, lecture/analyse l\'après-midi."<br>L: "Parfois trop de réunions."<br>O: "J\'essaie de garder 2h de travail profond par jour."' },
+  { cat: 'general', q_fr: 'Quel est le livre qui a le plus influencé votre façon de chercher ?', q_en: 'Which book most influenced your research approach?', prrlo_fr: 'P: "Influence bibliographique."<br>R: "Belle question."<br>R: "\"The Art of Scientific Investigation\" de Beveridge."<br>L: "Un vieux livre."<br>O: "Mais toujours pertinent."' },
+  { cat: 'general', q_fr: 'Comment gérez-vous la pression d\'une publication imminente ?', q_en: 'How do you handle the pressure of an upcoming publication?', prrlo_fr: 'P: "Stress publication."<br>R: "Tout chercheur vit ça."<br>R: "Organisation, deadlines intermédiaires, respiration."<br>L: "Je ne gère pas toujours parfaitement."<br>O: "Mais l\'expérience aide."' },
+  { cat: 'general', q_fr: 'Qu\'est-ce que la science pour vous ?', q_en: 'What is science to you?', prrlo_fr: 'P: "Définition personnelle."<br>R: "Question philosophique."<br>R: "Une méthode pour réduire l\'incertitude."<br>L: "Pas une vérité absolue."<br>O: "Mais la meilleure qu\'on ait."' },
+  { cat: 'general', q_fr: 'Pourquoi la société devrait-elle financer la recherche fondamentale ?', q_en: 'Why should society fund fundamental research?', prrlo_fr: 'P: "Financement recherche."<br>R: "Question politique."<br>R: "Parce qu\'on ne sait pas à l\'avance ce qui servira."<br>L: "Le jet EM était une curiosité académique il y a 10 ans."<br>O: "Aujourd\'hui, c\'est une technologie."' },
+  { cat: 'general', q_fr: 'Quel est le plus grand défi technologique du siècle selon vous ?', q_en: 'What is the greatest technological challenge of the century?', prrlo_fr: 'P: "Défi technologie."<br>R: "Question de vision."<br>R: "L\'énergie. Stocker, transporter, économiser."<br>L: "C\'est interdisciplinaire."<br>O: "Mon domaine peut aider au diagnostic de composants."' },
+  { cat: 'general', q_fr: 'Que feriez-vous si votre hypothèse principale s\'avérait fausse ?', q_en: 'What would you do if your main hypothesis proved wrong?', prrlo_fr: 'P: "Hypothèse réfutée."<br>R: "C\'est la science."<br>R: "Je reformulerais une nouvelle hypothèse."<br>L: "Les résultats négatifs sont des résultats."<br>O: "C\'est comme ça qu\'on progresse."' },
+  { cat: 'general', q_fr: 'Quelle est votre opinion sur les publications en accès libre ?', q_en: 'What is your opinion on open access publishing?', prrlo_fr: 'P: "Open access."<br>R: "Débat important."<br>R: "Nécessaire pour la diffusion de la science."<br>L: "Mais le modèle économique est problématique."<br>O: "Je publie en hybride quand je peux."' },
+  { cat: 'general', q_fr: 'Comment voyez-vous l\'évolution des formations en ligne ?', q_en: 'How do you see the evolution of online education?', prrlo_fr: 'P: "Formation en ligne."<br>R: "Sujet d\'actualité."<br>R: "Complément indispensable au présentiel."<br>L: "Mais rien ne remplace le contact humain."<br>O: "Le blended learning est l\'avenir."' },
+  { cat: 'general', q_fr: 'Qu\'est-ce qui distingue un bon enseignant d\'un excellent ?', q_en: 'What distinguishes a good teacher from an excellent one?', prrlo_fr: 'P: "Qualité enseignant."<br>R: "Je me suis posé la question."<br>R: "L\'empathie et la capacité à simplifier sans trahir."<br>L: "Un excellent enseignant rend le complexe simple."<br>O: "C\'est mon objectif."' },
+  { cat: 'general', q_fr: 'Quelle est votre matière d\'enseignement préférée et pourquoi ?', q_en: 'What is your favorite subject to teach and why?', prrlo_fr: 'P: "Matière favorite."<br>R: "Question pour un pédagogue."<br>R: "L\'électromagnétisme, parce que c\'est contre-intuitif."<br>L: "Et donc gratifiant quand ça fait tilt."<br>O: "Voir un étudiant comprendre Maxwell, c\'est magique."' },
+  { cat: 'general', q_fr: 'Comment introduisez-vous l\'électromagnétisme à des débutants ?', q_en: 'How do you introduce electromagnetism to beginners?', prrlo_fr: 'P: "Pédagogie EM."<br>R: "Je commence toujours par l\'intuition."<br>R: "Aimants, induction, ondes : des expériences simples."<br>L: "Les équations viennent après."<br>O: "Et seulement quand l\'intuition est là."' },
+  { cat: 'general', q_fr: 'Quel conseil donneriez-vous à un doctorant en première année ?', q_en: 'What advice would you give to a first-year PhD student?', prrlo_fr: 'P: "Conseil doctorant."<br>R: "J\'aurais aimé l\'entendre."<br>R: "Choisis un problème qui te passionne, pas un sujet tendance."<br>L: "Et prends soin de ta santé mentale."<br>O: "La thèse est un marathon, pas un sprint."' },
+  { cat: 'general', q_fr: 'Quel est le rôle de l\'erreur dans la recherche ?', q_en: 'What is the role of error in research?', prrlo_fr: 'P: "Rôle de l\'erreur."<br>R: "Question épistémologique."<br>R: "L\'erreur est le moteur de la correction."<br>L: "Sans erreur, pas de progrès."<br>O: "La science est un processus d\'élimination des erreurs."' },
+  { cat: 'general', q_fr: 'Comment restez-vous à jour dans votre domaine ?', q_en: 'How do you stay up to date in your field?', prrlo_fr: 'P: "Veille scientifique."<br>R: "Question organisationnelle."<br>R: "Google Scholar alerts + 2 revues par semaine + conférences."<br>L: "C\'est un investissement de 5h/semaine."<br>O: "Mais essentiel."' },
+  { cat: 'general', q_fr: 'Quelle conférence scientifique recommanderiez-vous ?', q_en: 'Which scientific conference would you recommend?', prrlo_fr: 'P: "Conférence recommandée."<br>R: "Dépend du domaine."<br>R: "EuCAP pour l\'EM, IEEE IUS pour les ultrasons."<br>L: "Mais les petites conférences sont plus productives pour le networking."<br>O: "Je préfère les conférences avec workshops."' },
+];
+
+let lang = localStorage.getItem('oratron-lang') || 'fr';
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i+1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+
+function render(qs) {
+  const h = document.getElementById('questions-list');
+  if (!qs || !qs.length) { h.innerHTML = '<div style="text-align:center;padding:40px 0;color:#555;font-size:.85em">Cliquez sur "Tirer 3 questions" pour générer une série.</div>'; return; }
+  let html = '';
+  qs.forEach((q, i) => {
+    html += `<div class="question-card">
+      <div class="cat">${CATS[q.cat]}</div>
+      <div class="q">${lang === 'fr' ? q.q_fr : q.q_en}</div>
+      <div class="prrlo" id="prrlo-${i}">${lang === 'fr' ? q.prrlo_fr : q.prrlo_en || q.prrlo_fr}</div>
+      <div class="actions">
+        <button onclick="document.getElementById('prrlo-${i}').classList.toggle('show')">${lang === 'fr' ? '💡 PRRLO' : '💡 Show PRRLO'}</button>
+      </div>
+    </div>`;
+  });
+  h.innerHTML = html;
+}
+
+function draw() {
+  const cat = document.getElementById('cat-filter').value;
+  let pool = QUESTIONS;
+  if (cat !== 'all') pool = pool.filter(q => q.cat === cat);
+  const drawn = shuffle([...pool]).slice(0, 3);
+  render(drawn);
+  document.getElementById('count-display').textContent = `${pool.length} ${lang === 'fr' ? 'questions disponibles' : 'questions available'}`;
+}
+
+document.getElementById('shuffle-btn').addEventListener('click', draw);
+document.getElementById('cat-filter').addEventListener('change', draw);
+
+// Timer
+let timerInterval = null;
+let timerSecs = 30;
+let timerRunning = false;
+
+function fmt(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function updateTimer() {
+  document.getElementById('timer-display').textContent = fmt(timerSecs);
+}
+
+function setTimer(s) {
+  if (timerRunning) return;
+  timerSecs = s;
+  updateTimer();
+}
+
+function startTimer() {
+  if (timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-start').textContent = lang === 'fr' ? 'Start' : 'Start'; return; }
+  timerRunning = true;
+  document.getElementById('timer-start').textContent = '⏹';
+  timerInterval = setInterval(() => {
+    timerSecs--;
+    updateTimer();
+    if (timerSecs <= 0) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      document.getElementById('timer-start').textContent = lang === 'fr' ? 'Start' : 'Start';
+      document.getElementById('timer-display').style.color = '#e53935';
+      setTimeout(() => document.getElementById('timer-display').style.color = '#4fc3f7', 2000);
+    }
+  }, 1000);
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('timer-start').textContent = lang === 'fr' ? 'Start' : 'Start';
+  timerSecs = parseInt(document.querySelector('.timer-box button[data-preset]')?.dataset?.preset) || 30;
+  updateTimer();
+}
+
+document.getElementById('timer-start').addEventListener('click', startTimer);
+document.getElementById('timer-reset').addEventListener('click', () => { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-start').textContent = lang === 'fr' ? 'Start' : 'Start'; setTimer(30); });
+
+document.getElementById('lang-toggle').onclick = () => {
+  lang = lang === 'fr' ? 'en' : 'fr';
+  localStorage.setItem('oratron-lang', lang);
+  document.querySelectorAll('.lang-toggle span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+  // re-draw
+  const cat = document.getElementById('cat-filter').value;
+  let pool = QUESTIONS;
+  if (cat !== 'all') pool = pool.filter(q => q.cat === cat);
+  document.getElementById('count-display').textContent = `${pool.length} ${lang === 'fr' ? 'questions disponibles' : 'questions available'}`;
+  // re-render current displayed questions if any
+  const existing = document.querySelectorAll('.question-card .q');
+  if (existing.length) {
+    const qs = document.querySelectorAll('.question-card');
+    qs.forEach((card, i) => {
+      const orig = QUESTIONS.find(q => (lang === 'fr' ? q.q_fr : q.q_en) === card.querySelector('.q').textContent?.trim());
+      // This naive matching won't work; just re-draw fresh.
+    });
+    draw();
+  }
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') { e.preventDefault(); startTimer(); }
+  if (e.key === 'r' || e.key === 'R') resetTimer();
+});
+
+// Init
+draw();
+updateTimer();
+</script>
+</body>
+</html>

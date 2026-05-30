@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oratron — Entraînement Prise de Parole</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050508; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #ff6b35, #e05020); border-radius: 3px; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #050508;
+  color: #e0e0e0;
+  overflow-x: hidden;
+}
+
+/* ── Canvas BG ── */
+#particles-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+#stars-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .5; }
+.bg-gradient {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -5%, rgba(255,107,53,.1) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(79,195,247,.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 20% 60%, rgba(255,107,53,.03) 0%, transparent 50%);
+  z-index: 0; pointer-events: none;
+}
+
+/* ── Cursor Glow ── */
+#cursor-glow {
+  position: fixed; width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,53,.04) 0%, transparent 70%);
+  pointer-events: none; z-index: 0; transform: translate(-50%,-50%); transition: left .1s, top .1s;
+}
+
+/* ── Nav ── */
+nav {
+  position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 40px;
+  background: rgba(5,5,8,.7); backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid rgba(255,107,53,.08);
+  transition: .3s;
+}
+nav.scrolled { background: rgba(5,5,8,.92); }
+nav .logo { font-weight: 900; font-size: 1.4em; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; }
+nav .logo .icon { width: 10px; height: 10px; background: #ff6b35; border-radius: 50%; animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(255,107,53,.6); } 50% { box-shadow: 0 0 0 8px rgba(255,107,53,0); } }
+nav .logo span { color: #ff6b35; }
+nav .logo small { font-weight: 300; font-size: .5em; color: #555; margin-left: 4px; letter-spacing: 2px; text-transform: uppercase; }
+nav .links { display: flex; align-items: center; gap: 6px; }
+nav .links a {
+  color: #777; text-decoration: none; font-size: .8em; padding: 6px 16px;
+  border-radius: 20px; transition: .3s; letter-spacing: .5px;
+}
+nav .links a:hover { color: #ff6b35; background: rgba(255,107,53,.08); }
+nav .links a.active { color: #ff6b35; background: rgba(255,107,53,.1); }
+nav .menu-toggle { display: none; background: none; border: none; color: #fff; font-size: 1.4em; cursor: pointer; }
+
+/* ── Hero ── */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 100px 20px 60px; position: relative; z-index: 1;
+}
+.hero .orb {
+  position: absolute; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,53,.06) 0%, transparent 60%);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  animation: orb-float 8s ease-in-out infinite;
+}
+@keyframes orb-float { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-55%) scale(1.05); } }
+.hero .orb-2 {
+  position: absolute; width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,195,247,.04) 0%, transparent 60%);
+  top: 30%; left: 60%; animation: orb-float-2 10s ease-in-out infinite;
+}
+@keyframes orb-float-2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-30px); } }
+.hero h1 {
+  font-size: clamp(2.5em, 7vw, 5em); font-weight: 900; letter-spacing: -3px; line-height: 1.05;
+  position: relative; z-index: 1;
+}
+.hero h1 .gradient {
+  background: linear-gradient(135deg, #fff 0%, #ff6b35 40%, #4fc3f7 80%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero h1 .typewriter {
+  display: inline-block; overflow: hidden; white-space: nowrap; border-right: 3px solid #ff6b35;
+  animation: blink-caret .75s step-end infinite;
+  -webkit-text-fill-color: initial; color: #fff;
+  font-size: .4em; display: block; margin-top: 10px; letter-spacing: 4px;
+}
+@keyframes blink-caret { 50% { border-color: transparent; } }
+.hero .sub {
+  font-size: .95em; color: #555; margin-top: 18px; letter-spacing: 3px; text-transform: uppercase; font-weight: 300;
+  position: relative; z-index: 1;
+}
+.hero .tagline {
+  font-size: .95em; color: #777; margin-top: 10px; max-width: 480px; margin-inline: auto; line-height: 1.7;
+  position: relative; z-index: 1;
+}
+.hero .cta {
+  margin-top: 36px; display: inline-flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+  position: relative; z-index: 1;
+}
+.hero .cta a {
+  display: inline-block; padding: 13px 34px; border-radius: 50px; text-decoration: none;
+  font-weight: 600; font-size: .85em; letter-spacing: 1px; transition: .4s; text-transform: uppercase; position: relative;
+}
+.hero .cta .primary {
+  background: linear-gradient(135deg, #ff6b35, #d94a1a); color: #fff;
+  box-shadow: 0 0 30px rgba(255,107,53,.25);
+}
+.hero .cta .primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 0 60px rgba(255,107,53,.5); }
+.hero .cta .primary::after {
+  content: ''; position: absolute; inset: -2px; border-radius: 52px;
+  background: linear-gradient(135deg, #ff6b35, transparent, #4fc3f7); z-index: -1;
+  opacity: 0; transition: .4s;
+}
+.hero .cta .primary:hover::after { opacity: 1; }
+.hero .cta .secondary {
+  border: 1px solid rgba(255,255,255,.1); color: #bbb; background: rgba(255,255,255,.03);
+  backdrop-filter: blur(10px);
+}
+.hero .cta .secondary:hover { border-color: #ff6b35; color: #ff6b35; background: rgba(255,107,53,.06); transform: translateY(-2px); }
+
+/* Stats */
+.hero .stats {
+  display: flex; gap: 40px; justify-content: center; margin-top: 50px; flex-wrap: wrap;
+  position: relative; z-index: 1;
+}
+.hero .stats .stat { text-align: center; }
+.hero .stats .stat .num { font-size: 2em; font-weight: 700; color: #ff6b35; }
+.hero .stats .stat .num .suffix { font-size: .5em; color: #555; }
+.hero .stats .stat .label { font-size: .7em; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-top: 3px; }
+
+/* ── Scroll indicator ── */
+.scroll-indicator {
+  position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; color: #444; font-size: .7em; letter-spacing: 2px;
+  animation: bounce-down 2s infinite;
+}
+@keyframes bounce-down { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+.scroll-indicator .line { width: 1px; height: 30px; background: linear-gradient(180deg, #ff6b35, transparent); }
+
+/* ── Section common ── */
+section { position: relative; z-index: 1; padding: 90px 0; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.section-label {
+  text-align: center; font-size: .75em; text-transform: uppercase; letter-spacing: 3px; color: #ff6b35; font-weight: 600;
+}
+.section-title {
+  text-align: center; margin-bottom: 12px;
+}
+.section-title h2 {
+  font-size: clamp(1.8em, 4vw, 2.8em); font-weight: 700; letter-spacing: -1px; line-height: 1.2;
+}
+.section-title h2 span { color: #ff6b35; }
+.section-title p { color: #666; margin-top: 6px; font-size: .95em; }
+
+/* ── Day display ── */
+.day-display {
+  text-align: center; margin: 30px 0;
+}
+.day-display .day-badge {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 24px; border-radius: 50px;
+  background: rgba(255,107,53,.08); border: 1px solid rgba(255,107,53,.15);
+  font-size: .85em; text-transform: uppercase; letter-spacing: 2px; color: #ff6b35; font-weight: 600;
+}
+.day-display .day-badge .progress-ring { width: 28px; height: 28px; }
+.day-display .day-badge span { color: #fff; }
+
+/* ── Exos grid ── */
+.exos-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 20px;
+}
+.exo-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 16px; padding: 24px; transition: all .4s cubic-bezier(.23,1,.32,1);
+  position: relative; overflow: hidden; cursor: pointer;
+  animation: fade-up .6s ease-out both;
+}
+.exo-card:nth-child(1) { animation-delay: 0s; }
+.exo-card:nth-child(2) { animation-delay: .15s; }
+.exo-card:nth-child(3) { animation-delay: .3s; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.exo-card::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, #ff6b35, #4fc3f7, transparent);
+  transition: left .6s;
+}
+.exo-card:hover::before { left: 100%; }
+.exo-card::after {
+  content: ''; position: absolute; inset: 0; border-radius: 16px;
+  background: linear-gradient(135deg, transparent 50%, rgba(255,107,53,.03));
+  pointer-events: none;
+}
+.exo-card:hover {
+  border-color: rgba(255,107,53,.2); transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 24px 60px rgba(0,0,0,.5), 0 0 40px rgba(255,107,53,.05);
+}
+.exo-card .header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.exo-card .num { font-size: .7em; color: #ff6b35; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.exo-card .tag {
+  display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .65em;
+  text-transform: uppercase; letter-spacing: 1px; line-height: 1.6;
+}
+.exo-card .tag.impro { background: rgba(255,152,0,.12); color: #ffb74d; border: 1px solid rgba(255,152,0,.15); }
+.exo-card .tag.voix { background: rgba(156,39,176,.12); color: #ce93d8; border: 1px solid rgba(156,39,176,.15); }
+.exo-card .tag.stress { background: rgba(76,175,80,.12); color: #81c784; border: 1px solid rgba(76,175,80,.15); }
+.exo-card .tag.struct { background: rgba(33,150,243,.12); color: #90caf9; border: 1px solid rgba(33,150,243,.15); }
+.exo-card .icon-big { font-size: 2em; margin-bottom: 8px; }
+.exo-card h3 { font-size: 1.1em; font-weight: 600; margin-bottom: 6px; }
+.exo-card p { color: #888; font-size: .85em; line-height: 1.6; }
+.exo-card .exo-link {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+  color: #4fc3f7; font-size: .82em; text-decoration: none; font-weight: 500; transition: .3s;
+}
+.exo-card .exo-link:hover { color: #ff6b35; gap: 10px; }
+
+/* ── Timer ── */
+.timer-glass {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 24px; padding: 50px 30px; max-width: 600px; margin: 30px auto 0;
+  backdrop-filter: blur(10px); position: relative; overflow: hidden;
+}
+.timer-glass::before {
+  content: ''; position: absolute; width: 300px; height: 300px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,53,.04) 0%, transparent);
+  top: -100px; right: -100px;
+}
+.timer-display {
+  font-family: 'JetBrains Mono', monospace; font-size: clamp(3.5em, 10vw, 7em); font-weight: 600;
+  letter-spacing: 6px; color: #fff; text-align: center;
+  text-shadow: 0 0 60px rgba(255,107,53,.1);
+}
+.timer-display .sep { color: #ff6b35; animation: blink 1s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+.timer-controls { display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.timer-controls button {
+  padding: 10px 28px; border-radius: 50px; border: none; font-weight: 600; font-size: .82em;
+  text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: .3s;
+}
+.timer-controls .start { background: linear-gradient(135deg, #ff6b35, #d94a1a); color: #fff; box-shadow: 0 0 20px rgba(255,107,53,.2); }
+.timer-controls .start:hover { box-shadow: 0 0 40px rgba(255,107,53,.5); transform: scale(1.03); }
+.timer-controls .pause { background: rgba(255,255,255,.06); color: #bbb; border: 1px solid rgba(255,255,255,.08); }
+.timer-controls .pause:hover { background: rgba(255,255,255,.1); }
+.timer-controls .reset { background: transparent; color: #555; border: 1px solid rgba(255,255,255,.06); }
+.timer-controls .reset:hover { border-color: #ff6b35; color: #ff6b35; }
+.timer-presets { display: flex; gap: 8px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+.timer-presets button {
+  padding: 5px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,.06); background: transparent;
+  color: #777; font-size: .75em; cursor: pointer; transition: .3s; font-family: 'JetBrains Mono', monospace;
+}
+.timer-presets button:hover { border-color: #ff6b35; color: #ff6b35; }
+.timer-presets button.active { border-color: #ff6b35; color: #ff6b35; background: rgba(255,107,53,.08); }
+
+/* ── Video Grid ── */
+.vid-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 24px;
+}
+.vid-item {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04);
+  border-radius: 12px; padding: 12px 16px; text-decoration: none; color: inherit; transition: .3s;
+}
+.vid-item:hover { border-color: rgba(255,107,53,.2); background: rgba(255,107,53,.04); transform: translateX(4px); }
+.vid-item .icon { font-size: 1.3em; width: 36px; text-align: center; }
+.vid-item .info { flex: 1; }
+.vid-item .info .title { font-weight: 500; font-size: .85em; }
+.vid-item .info .meta { color: #666; font-size: .72em; margin-top: 2px; }
+.vid-item .play { color: #ff6b35; font-size: .8em; }
+
+/* ── Resources ── */
+.res-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 24px;
+}
+.res-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 16px; padding: 22px; transition: .4s; position: relative; overflow: hidden;
+}
+.res-card:hover { border-color: rgba(255,107,53,.15); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.3); }
+.res-card .icon { font-size: 1.4em; margin-bottom: 10px; }
+.res-card h3 { font-size: 1em; font-weight: 600; margin-bottom: 6px; }
+.res-card p { color: #888; font-size: .82em; line-height: 1.6; }
+.res-card a {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 10px;
+  color: #4fc3f7; font-size: .8em; text-decoration: none; font-weight: 500; transition: .3s;
+}
+.res-card a:hover { color: #ff6b35; gap: 8px; }
+
+/* ── Quote ── */
+.quote-section {
+  text-align: center; padding: 60px 0;
+}
+.quote-section blockquote {
+  font-size: clamp(1.2em, 3vw, 1.8em); font-weight: 300; font-style: italic;
+  color: #888; max-width: 700px; margin: 0 auto; line-height: 1.6;
+}
+.quote-section blockquote::before { content: '"'; color: #ff6b35; font-size: 1.5em; }
+.quote-section blockquote::after { content: '"'; color: #ff6b35; font-size: 1.5em; }
+.quote-section cite { display: block; margin-top: 12px; color: #555; font-size: .8em; font-style: normal; }
+
+/* ── Progress ── */
+.progress-section { padding: 50px 0; }
+.progress-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-top: 24px;
+}
+.prog-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04);
+  border-radius: 14px; padding: 20px; text-align: center; transition: .3s;
+}
+.prog-card:hover { border-color: rgba(255,107,53,.12); }
+.prog-card .pct { font-size: 2.2em; font-weight: 700; color: #ff6b35; }
+.prog-card .pct .small { font-size: .4em; color: #555; }
+.prog-card .label { color: #888; font-size: .78em; margin-top: 4px; }
+
+/* ── Language toggle ── */
+.lang-toggle {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 3px; cursor: pointer; transition: .3s;
+}
+.lang-toggle:hover { border-color: rgba(255,107,53,.3); }
+.lang-toggle span {
+  padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600;
+  letter-spacing: .5px; transition: .3s; color: #555;
+}
+.lang-toggle span.active { background: #ff6b35; color: #fff; }
+
+/* ── Footer ── */
+footer {
+  text-align: center; padding: 50px 24px 30px; border-top: 1px solid rgba(255,255,255,.04);
+  color: #444; font-size: .78em; position: relative; z-index: 1;
+}
+footer .links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+footer a { color: #666; text-decoration: none; transition: .3s; }
+footer a:hover { color: #ff6b35; }
+footer .signature {
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.03);
+}
+footer .signature .created-by {
+  font-size: .7em; letter-spacing: 2px; text-transform: uppercase; color: #555;
+}
+footer .signature .creator-name {
+  font-size: 1.6em; font-weight: 900; letter-spacing: 6px; text-transform: uppercase;
+  background: linear-gradient(135deg, #ff6b35 0%, #4fc3f7 50%, #ff6b35 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: grad-signature 4s ease-in-out infinite;
+}
+@keyframes grad-signature { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+footer .signature .creator-name .dot { color: #ff6b35; }
+footer .signature .role {
+  font-size: .65em; letter-spacing: 3px; color: #444; margin-top: 2px;
+}
+
+/* ── Glass cards ── */
+.glass-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 20px; padding: 32px; backdrop-filter: blur(10px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  nav { padding: 12px 18px; }
+  nav .links a { font-size: .72em; padding: 4px 10px; }
+  .hero .stats { gap: 20px; }
+  .hero .stats .stat .num { font-size: 1.5em; }
+  .exos-grid { grid-template-columns: 1fr; }
+  .res-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Nebula blobs ── */
+.nebula {
+  position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+  filter: blur(80px); opacity: .15; will-change: transform;
+}
+.nebula-1 {
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, #ff6b35 0%, #d94a1a 40%, transparent 70%);
+  top: -200px; left: -200px;
+  animation: nebula-drift-1 25s ease-in-out infinite;
+}
+.nebula-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #4fc3f7 0%, #0288d1 40%, transparent 70%);
+  bottom: -150px; right: -150px;
+  animation: nebula-drift-2 30s ease-in-out infinite;
+}
+.nebula-3 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #7c4dff 0%, #536dfe 40%, transparent 70%);
+  top: 50%; left: 30%;
+  animation: nebula-drift-3 20s ease-in-out infinite;
+}
+@keyframes nebula-drift-1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  25% { transform: translate(120px,80px) scale(1.1); }
+  50% { transform: translate(60px,160px) scale(.95); }
+  75% { transform: translate(-40px,60px) scale(1.05); }
+}
+@keyframes nebula-drift-2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(-80px,-60px) scale(1.15); }
+  66% { transform: translate(-140px,-20px) scale(.9); }
+}
+@keyframes nebula-drift-3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(-60px,-80px) scale(1.2); }
+}
+
+/* ── Shooting star ── */
+.shooting-star {
+  position: fixed; width: 3px; height: 3px; border-radius: 50%; z-index: 0;
+  background: #fff; box-shadow: 0 0 4px 2px rgba(255,255,255,.3);
+  animation: shoot 4s ease-in infinite;
+  pointer-events: none; opacity: 0;
+}
+.shooting-star::after {
+  content: ''; position: absolute; top: 0; left: 0; width: 120px; height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,.6), transparent);
+  transform: translateX(-100%);
+}
+.shooting-star:nth-child(1) { top: 10%; left: 80%; animation-delay: 3s; }
+.shooting-star:nth-child(2) { top: 30%; left: 60%; animation-delay: 8s; }
+.shooting-star:nth-child(3) { top: 5%; left: 90%; animation-delay: 14s; }
+.shooting-star:nth-child(4) { top: 50%; left: 20%; animation-delay: 21s; }
+.shooting-star:nth-child(5) { top: 20%; left: 40%; animation-delay: 27s; }
+@keyframes shoot {
+  0% { opacity: 0; transform: translate(0,0) rotate(-35deg); }
+  5% { opacity: 1; }
+  25% { opacity: 1; }
+  40% { opacity: 0; transform: translate(-400px,280px) rotate(-35deg); }
+  100% { opacity: 0; }
+}
+
+/* ── Section reveal ── */
+.reveal {
+  opacity: 0; transform: translateY(40px); transition: opacity .8s cubic-bezier(.16,1,.3,1), transform .8s cubic-bezier(.16,1,.3,1);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: .1s; }
+.reveal-delay-2 { transition-delay: .2s; }
+.reveal-delay-3 { transition-delay: .3s; }
+.reveal-delay-4 { transition-delay: .4s; }
+.reveal-delay-5 { transition-delay: .5s; }
+
+/* ── Card float ── */
+@keyframes card-float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.float-anim { animation: card-float 4s ease-in-out infinite; }
+
+/* ── Glow pulse ── */
+@keyframes glow-pulse {
+  0%,100% { box-shadow: 0 0 20px rgba(255,107,53,.2); }
+  50% { box-shadow: 0 0 50px rgba(255,107,53,.4), 0 0 80px rgba(255,107,53,.1); }
+}
+
+/* ── Gradient shift for CTA ── */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero .cta .primary {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease-in-out infinite;
+}
+
+/* ── Reduce motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .nebula, .shooting-star, #stars-canvas, #particles-canvas, #cursor-glow { display: none; }
+  .reveal { opacity: 1; transform: none; }
+  .exo-card:hover { transform: none; }
+  .hero .cta .primary { animation: none; }
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ── Notif toast ── */
+.toast {
+  position: fixed; bottom: 30px; right: 30px; z-index: 200;
+  background: rgba(255,107,53,.12); border: 1px solid rgba(255,107,53,.2);
+  border-radius: 12px; padding: 14px 20px; color: #ff6b35; font-size: .85em;
+  backdrop-filter: blur(16px); transform: translateY(100px); opacity: 0;
+  transition: .5s cubic-bezier(.23,1,.32,1); pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+<canvas id="particles-canvas"></canvas>
+<div class="bg-gradient"></div>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div id="cursor-glow"></div>
+<div class="toast" id="toast"></div>
+
+<!-- Nav -->
+<nav id="nav">
+  <div class="logo">
+    <span class="icon"></span>
+    Oratron<span>.</span> <small>Entraînement</small>
+  </div>
+  <div class="links">
+    <a href="#hero" data-i18n="nav.home" class="active">Accueil</a>
+    <a href="#training" data-i18n="nav.training">Séance</a>
+    <a href="#timer" data-i18n="nav.timer">Chrono</a>
+    <a href="#videos" data-i18n="nav.videos">Vidéos</a>
+    <a href="#resources" data-i18n="nav.resources">Ressources</a>
+    <a href="scientifique/index.html" data-i18n="nav.science">🔬 Scientifique</a>
+    <a href="../index.html" data-i18n="nav.library">Bibliothèque</a>
+    <div class="lang-toggle" id="lang-toggle" title="Switch language">
+      <span class="active" data-lang="fr">FR</span>
+      <span data-lang="en">EN</span>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="orb"></div>
+  <div class="orb-2"></div>
+  <div class="container">
+    <h1>
+      <span class="gradient reveal reveal-delay-1">Orateur 2.0</span>
+      <span class="typewriter reveal reveal-delay-2" id="typewriter"></span>
+    </h1>
+    <p class="sub reveal reveal-delay-3" data-i18n="hero.sub">Entraînement quotidien — 15 minutes par jour</p>
+    <p class="tagline reveal reveal-delay-4" data-i18n="hero.tagline">Programme dynamique, chronomètre intégré, vidéos HD et exercices progressifs pour maîtriser l'art oratoire.</p>
+    <div class="cta reveal reveal-delay-5">
+      <a href="#training" class="primary" data-i18n="hero.ctaPrimary">Démarrer la séance</a>
+      <a href="#resources" class="secondary" data-i18n="hero.ctaSecondary">Explorer les ressources</a>
+    </div>
+    <div class="stats reveal reveal-delay-5">
+      <div class="stat"><div class="num" data-target="18">0<span class="suffix">+</span></div><div class="label" data-i18n="hero.stat1">Vidéos HD</div></div>
+      <div class="stat"><div class="num" data-target="15">0<span class="suffix">+</span></div><div class="label" data-i18n="hero.stat2">Exercices</div></div>
+      <div class="stat"><div class="num" data-target="7">0<span class="suffix">j</span></div><div class="label" data-i18n="hero.stat3">Par semaine</div></div>
+      <div class="stat"><div class="num" data-target="15">0<span class="suffix">′</span></div><div class="label" data-i18n="hero.stat4">Par séance</div></div>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span data-i18n="hero.scroll">Défiler</span>
+    <div class="line"></div>
+  </div>
+</section>
+
+<!-- Quote -->
+<section class="quote-section">
+  <div class="container">
+    <blockquote id="quote-text">La parole est moitié à celui qui parle, moitié à celui qui écoute.</blockquote>
+    <cite id="quote-author">Montaigne</cite>
+  </div>
+</section>
+
+<!-- Daily Training -->
+<section class="training" id="training">
+  <div class="container">
+    <div class="section-label reveal" data-i18n="training.label">Programme</div>
+    <div class="section-title reveal">
+      <h2><span data-i18n="training.titlePre">Séance du</span> <span id="day-name">jour</span></h2>
+      <p id="day-desc" data-i18n="training.desc">Sélectionné pour toi. 15 minutes chrono.</p>
+    </div>
+    <div class="day-display">
+      <div class="day-badge">
+        <svg class="progress-ring" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="rgba(255,107,53,.15)" stroke-width="2"/><circle cx="14" cy="14" r="11" fill="none" stroke="#ff6b35" stroke-width="2" stroke-dasharray="69.1" stroke-dashoffset="69.1" id="progress-ring"/></svg>
+        Jour <span id="day-num">1</span> / 7
+      </div>
+    </div>
+    <div class="exos-grid reveal" id="exos-grid"></div>
+  </div>
+</section>
+
+<!-- Progress -->
+<section class="progress-section">
+  <div class="container">
+    <div class="section-label reveal" data-i18n="progress.label">Progression</div>
+    <div class="section-title reveal"><h2 data-i18n="progress.title">Résultats <span>attendus</span></h2></div>
+    <div class="progress-grid">
+      <div class="prog-card"><div class="pct" data-target="1">0<span class="small"> sem</span></div><div class="label" data-i18n="progress.card1">Prise de conscience des tics</div></div>
+      <div class="prog-card"><div class="pct" data-target="30">0<span class="small">%</span></div><div class="label" data-i18n="progress.card2">Fluidité après 1 mois</div></div>
+      <div class="prog-card"><div class="pct" data-target="3">0<span class="small"> mois</span></div><div class="label" data-i18n="progress.card3">Répartie naturelle</div></div>
+      <div class="prog-card"><div class="pct" data-target="15">0<span class="small">′/j</span></div><div class="label" data-i18n="progress.card4">Temps minimal requis</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Timer -->
+<section class="timer-section" id="timer">
+  <div class="container">
+    <div class="section-label reveal" data-i18n="timer.label">Chronomètre</div>
+    <div class="section-title reveal"><h2 data-i18n="timer.title">Minuteur <span>d'entraînement</span></h2></div>
+    <div class="timer-glass reveal">
+      <div class="timer-display"><span id="minutes">02</span><span class="sep">:</span><span id="seconds">00</span></div>
+      <div class="timer-controls">
+        <button class="start" id="timer-start"><span data-i18n="timer.start">▶ Démarrer</span></button>
+        <button class="pause" id="timer-pause"><span data-i18n="timer.pause">⏸ Pause</span></button>
+        <button class="reset" id="timer-reset"><span data-i18n="timer.reset">↺ Reset</span></button>
+      </div>
+      <div class="timer-presets">
+        <button data-time="120" class="active">2:00</button>
+        <button data-time="180">3:00</button>
+        <button data-time="300">5:00</button>
+        <button data-time="600">10:00</button>
+        <button data-time="900">15:00</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Videos -->
+<section class="videos" id="videos">
+  <div class="container">
+    <div class="section-label reveal" data-i18n="videos.label">Vidéos</div>
+    <div class="section-title reveal"><h2 data-i18n="videos.title">Exercices <span>rapides</span></h2><p><span data-i18n="videos.sub">Sophie Dussart — Coaching express 2 min</span></p></div>
+    <div class="vid-grid reveal">
+      <a href="../Vidéos/FR01 - Sophie Dussart - LA RESPIRATION.mp4" class="vid-item"><div class="icon">🌬️</div><div class="info"><div class="title">Respiration</div><div class="meta">Sophie Dussart · 2 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/FR02 - Sophie Dussart - L'ARTICULATION.mp4" class="vid-item"><div class="icon">🗣️</div><div class="info"><div class="title">Articulation</div><div class="meta">Sophie Dussart · 2 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/FR03 - Sophie Dussart - OU PLACER SES MAINS.mp4" class="vid-item"><div class="icon">🤲</div><div class="info"><div class="title">Placer ses mains</div><div class="meta">Sophie Dussart · 2 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/FR04 - Sophie Dussart - L'INTONATION.mp4" class="vid-item"><div class="icon">🎵</div><div class="info"><div class="title">Intonation</div><div class="meta">Sophie Dussart · 2 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/FR06 - Sophie Dussart - CONFIANCE EN SOI.mp4" class="vid-item"><div class="icon">⚡</div><div class="info"><div class="title">Confiance en soi</div><div class="meta">Sophie Dussart · 2 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/FR08 - Sophie Dussart - ART DE LA REPARTIE.mp4" class="vid-item"><div class="icon">💬</div><div class="info"><div class="title">Art de la répartie</div><div class="meta">Sophie Dussart · 2 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/FR11 - Acadomia - Grand Oral - Bertrand Perrier.mp4" class="vid-item"><div class="icon">🎓</div><div class="info"><div class="title">Grand Oral — Bertrand Perrier</div><div class="meta">Acadomia · 20 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/01 - Julian Treasure - How to Speak So People Want to Listen - Vocal Exercises.mp4" class="vid-item"><div class="icon">🎤</div><div class="info"><div class="title">Vocal Exercises (EN)</div><div class="meta">Julian Treasure · 10 min</div></div><span class="play">▶</span></a>
+      <a href="../Vidéos/03 - Alexander Lyon - How to Practice Speech 3x3+1.mp4" class="vid-item"><div class="icon">📋</div><div class="info"><div class="title">3x3+1 Practice Method (EN)</div><div class="meta">Alex Lyon · 15 min</div></div><span class="play">▶</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Resources -->
+<section class="resources" id="resources">
+  <div class="container">
+    <div class="section-label reveal" data-i18n="resources.label">Ressources</div>
+    <div class="section-title reveal"><h2 data-i18n="resources.title">Boîte à <span>outils</span></h2><p data-i18n="resources.sub">Tout pour progresser</p></div>
+    <div class="res-grid reveal">
+      <div class="res-card">
+        <div class="icon">📄</div>
+        <h3 data-i18n="res.card1Title">15 exercices (PDF)</h3>
+        <p data-i18n="res.card1Desc">Programme complet imprimable : improvisation, articulation, respiration, structure. Planning 15 min/jour.</p>
+        <a href="../Ressources/exercices_prise_de_parole.pdf" target="_blank"><span data-i18n="res.card1Link">Télécharger le PDF</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🌐</div>
+        <h3 data-i18n="res.card2Title">15 exercices (HTML)</h3>
+        <p data-i18n="res.card2Desc">Version interactive avec liens cliquables vers les vidéos et ressources externes.</p>
+        <a href="../Ressources/exercices_prise_de_parole.html" target="_blank"><span data-i18n="res.card2Link">Ouvrir la page</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">📚</div>
+        <h3 data-i18n="res.card3Title">Bibliothèque complète</h3>
+        <p data-i18n="res.card3Desc">Catalogue des 18 vidéos HD avec descriptions, tags et liens YouTube.</p>
+        <a href="../index.html" target="_blank"><span data-i18n="res.card3Link">Accéder à la bibliothèque</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🎲</div>
+        <h3 data-i18n="res.card4Title">Simulateur Letmotiv</h3>
+        <p data-i18n="res.card4Desc">Générateur de sujets aléatoires pour l'improvisation. 2 min chrono, choix de l'axe de travail.</p>
+        <a href="https://www.letmotiv.fr/simulateur-prise-de-parole-en-public" target="_blank"><span data-i18n="res.card4Link">Lancer le simulateur</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🎯</div>
+        <h3 data-i18n="res.card5Title">Objectif Éloquence</h3>
+        <p data-i18n="res.card5Desc">5 exercices d'éloquence : enregistrement, adaptation au public, moment star, conclusion impact, miroir des émotions.</p>
+        <a href="https://www.objectifeloquence.fr/exercices-eloquence/" target="_blank"><span data-i18n="res.card5Link">Voir les exercices</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🎭</div>
+        <h3 data-i18n="res.card6Title">40 exercices d'impro</h3>
+        <p data-i18n="res.card6Desc">Guide complet d'improvisation théâtrale : exercices solo, duo et groupe. Progressif.</p>
+        <a href="https://www.infamily.fr/40-exercices-dimprovisation-theatrale/" target="_blank"><span data-i18n="res.card6Link">Découvrir</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🗣️</div>
+        <h3 data-i18n="res.card7Title">Répartie — Cours le Foyer</h3>
+        <p data-i18n="res.card7Desc">6 exercices d'acteur pour répondre du tac au tac : écoute, tempo, respiration, improvisation cadrée.</p>
+        <a href="https://www.courslefoyer.com/fiches-conseil/avoir-de-la-repartie-exercices-dacteur-pour-repondre-avec-justesse" target="_blank"><span data-i18n="res.card7Link">Voir les exercices</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🧠</div>
+        <h3 data-i18n="res.card8Title">Réduire les tics de langage</h3>
+        <p data-i18n="res.card8Desc">Exercices pour éliminer "euh", "donc", "en fait" : conscience, enregistrement, rythme, improvisation guidée.</p>
+        <a href="https://www.espacefrancais.com/reduire-les-tics-de-langage/" target="_blank"><span data-i18n="res.card8Link">Lire l'article</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🎤</div>
+        <h3 data-i18n="res.card9Title">Think Fast, Talk Smart</h3>
+        <p data-i18n="res.card9Desc">Stanford — 58 min. Atelier complet d'improvisation et de communication spontanée (VO).</p>
+        <a href="../Vidéos/05 - Stanford - Think Fast Talk Smart.mp4"><span data-i18n="res.card9Link">Voir la vidéo</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🧘</div>
+        <h3 data-i18n="res.card10Title">Respiration guidée</h3>
+        <p data-i18n="res.card10Desc">Exercice interactif de respiration carrée. Animation visuelle, cycles progressifs, idéal avant une prise de parole.</p>
+        <a href="../Ressources/respiration-interactive.html" target="_blank"><span data-i18n="res.card10Link">Ouvrir l'outil</span> →</a>
+      </div>
+      <div class="res-card">
+        <div class="icon">🎯</div>
+        <h3 data-i18n="res.card11Title">Générateur de sujets</h3>
+        <p data-i18n="res.card11Desc">Tire un sujet d'improvisation aléatoire (25+ sujets) avec chronomètre intégré. Convaincre, raconter, expliquer, défendre.</p>
+        <a href="../Ressources/generateur-sujets.html" target="_blank"><span data-i18n="res.card11Link">Tirer un sujet</span> →</a>
+      </div>
+      <div class="res-card" style="border-color:rgba(79,195,247,.12);background:rgba(79,195,247,.015)">
+        <div class="icon">🔬</div>
+        <h3 data-i18n="res.scienceTitle">OSCAR-S — Scientifique</h3>
+        <p data-i18n="res.scienceDesc">Module scientifique : méthode OSCAR-S, programme 30 jours, 8 exercices, générateur de questions, grille d'évaluation.</p>
+        <a href="scientifique/index.html"><span data-i18n="res.scienceLink">Accéder au module</span> →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="links">
+    <a href="#hero" data-i18n="nav.home">Accueil</a>
+    <a href="#training" data-i18n="nav.training">Séance</a>
+    <a href="#timer" data-i18n="nav.timer">Chrono</a>
+    <a href="#videos" data-i18n="nav.videos">Vidéos</a>
+    <a href="#resources" data-i18n="nav.resources">Ressources</a>
+    <a href="../index.html" data-i18n="nav.library">Bibliothèque</a>
+    <a href="scientifique/index.html" data-i18n="nav.science">🔬 Scientifique</a>
+    <a href="../Ressources/exercices_prise_de_parole.pdf">PDF</a>
+  </div>
+  <p data-i18n="footer.tagline">Oratron — Système d'entraînement à la prise de parole · Fait avec passion</p>
+  <div class="signature">
+    <div class="created-by" data-i18n="footer.createdBy">Créé par</div>
+    <div class="creator-name">NDOUWE<span class="dot">.</span> Salvador</div>
+    <div class="role" data-i18n="footer.role">Design &amp; Développement</div>
+  </div>
+</footer>
+
+<script>
+// ── Timer ──
+let time = 120, running = false, interval = null;
+const display = () => {
+  document.getElementById('minutes').textContent = String(Math.floor(time/60)).padStart(2,'0');
+  document.getElementById('seconds').textContent = String(time%60).padStart(2,'0');
+};
+const stop = () => { clearInterval(interval); running = false; };
+document.getElementById('timer-start').onclick = () => {
+  if (running) return;
+  if (time <= 0) { time = parseInt(document.querySelector('.timer-presets .active')?.dataset?.time || 120); display(); }
+  running = true;
+  interval = setInterval(() => { if (time > 0) { time--; display(); } else { stop(); } }, 1000);
+};
+document.getElementById('timer-pause').onclick = stop;
+document.getElementById('timer-reset').onclick = () => {
+  stop();
+  time = parseInt(document.querySelector('.timer-presets .active')?.dataset?.time || 120);
+  display();
+};
+document.querySelectorAll('.timer-presets button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.timer-presets button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); stop(); time = parseInt(b.dataset.time); display();
+  };
+});
+display();
+
+// ── Nav scroll ──
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+  document.querySelectorAll('nav .links a').forEach(a => {
+    a.classList.toggle('active', document.getElementById(a.getAttribute('href').substring(1))?.getBoundingClientRect().top < 200);
+  });
+});
+
+// ── Cursor glow ──
+document.addEventListener('mousemove', e => {
+  document.getElementById('cursor-glow').style.left = e.clientX + 'px';
+  document.getElementById('cursor-glow').style.top = e.clientY + 'px';
+});
+
+// ── Galaxy Star System ──
+const starsCanvas = document.getElementById('stars-canvas');
+const sctx = starsCanvas.getContext('2d');
+let sw, sh;
+function sresize() { sw = starsCanvas.width = window.innerWidth; sh = starsCanvas.height = window.innerHeight; }
+sresize(); window.addEventListener('resize', sresize);
+
+// Layer 1: Distant twinkling field
+const fieldStars = Array.from({length:250}, () => ({
+  x: Math.random()*sw, y: Math.random()*sh, r: Math.random()*1 + .3,
+  a: Math.random(), s: .003 + Math.random()*.008, hue: Math.random()*60 + 20
+}));
+
+// Layer 2: Colored medium stars with glow
+const glowStars = Array.from({length:80}, () => ({
+  x: Math.random()*sw, y: Math.random()*sh, r: Math.random()*1.5 + .5,
+  a: Math.random(), s: .002 + Math.random()*.005,
+  hue: Math.random() > .5 ? 30 + Math.random()*20 : 190 + Math.random()*30
+}));
+
+// Layer 3: Galaxy spiral arms
+const GALAXY_CX = () => sw * .5;
+const GALAXY_CY = () => sh * .5;
+const ARM_COUNT = 3;
+const galaxyPts = [];
+for (let i = 0; i < 200; i++) {
+  const arm = i % ARM_COUNT;
+  const dist = Math.random() * Math.min(sw, sh) * .35;
+  const angleOffset = (arm / ARM_COUNT) * Math.PI * 2;
+  const spread = (1 - dist / (Math.min(sw, sh) * .35)) * .4 + .1;
+  const angle = dist * .012 + angleOffset + (Math.random() - .5) * spread;
+  galaxyPts.push({
+    baseAngle: angle, dist,
+    r: Math.random() * 1.8 + .3,
+    speed: .0003 + Math.random() * .0004,
+    a: .3 + Math.random() * .5,
+    hue: 25 + Math.random() * 30
+  });
+}
+
+let galaxyAngle = 0;
+
+function drawGalaxy() {
+  sctx.clearRect(0, 0, sw, sh);
+  const cx = GALAXY_CX(), cy = GALAXY_CY();
+  galaxyAngle += .002;
+
+  // Field stars
+  fieldStars.forEach(st => {
+    st.a += st.s;
+    if (st.a > 1 || st.a < 0) st.s *= -1;
+    sctx.beginPath(); sctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+    sctx.fillStyle = `rgba(255,255,255,${.08 + st.a * .35})`;
+    sctx.fill();
+  });
+
+  // Glow stars
+  glowStars.forEach(st => {
+    st.a += st.s;
+    if (st.a > 1 || st.a < 0) st.s *= -1;
+    const alpha = .1 + st.a * .4;
+    sctx.beginPath(); sctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+    sctx.fillStyle = `hsla(${st.hue},70%,70%,${alpha})`;
+    sctx.fill();
+    // Outer glow
+    sctx.beginPath(); sctx.arc(st.x, st.y, st.r * 3, 0, Math.PI * 2);
+    sctx.fillStyle = `hsla(${st.hue},70%,70%,${alpha * .08})`;
+    sctx.fill();
+  });
+
+  // Galaxy spiral
+  galaxyPts.forEach(p => {
+    const angle = p.baseAngle + galaxyAngle * p.speed * 20;
+    const x = cx + Math.cos(angle) * p.dist;
+    const y = cy + Math.sin(angle) * p.dist;
+    const alpha = p.a * (1 - p.dist / (Math.min(sw, sh) * .4));
+    sctx.beginPath(); sctx.arc(x, y, p.r, 0, Math.PI * 2);
+    sctx.fillStyle = `hsla(${p.hue},80%,60%,${alpha * .6})`;
+    sctx.fill();
+    // faint glow
+    sctx.beginPath(); sctx.arc(x, y, p.r * 4, 0, Math.PI * 2);
+    sctx.fillStyle = `hsla(${p.hue},80%,60%,${alpha * .04})`;
+    sctx.fill();
+  });
+
+  // Galaxy core glow
+  const grad = sctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(sw, sh) * .12);
+  grad.addColorStop(0, 'rgba(255,180,120,.12)');
+  grad.addColorStop(.3, 'rgba(255,107,53,.06)');
+  grad.addColorStop(.6, 'rgba(79,195,247,.03)');
+  grad.addColorStop(1, 'transparent');
+  sctx.fillStyle = grad;
+  sctx.fillRect(cx - Math.min(sw, sh) * .15, cy - Math.min(sw, sh) * .15, Math.min(sw, sh) * .3, Math.min(sw, sh) * .3);
+
+  // Connection lines near core
+  galaxyPts.forEach((a, i) => {
+    for (let j = i + 1; j < galaxyPts.length; j += 30) {
+      const b = galaxyPts[j];
+      const angleA = a.baseAngle + galaxyAngle * a.speed * 20;
+      const angleB = b.baseAngle + galaxyAngle * b.speed * 20;
+      const ax = cx + Math.cos(angleA) * a.dist;
+      const ay = cy + Math.sin(angleA) * a.dist;
+      const bx = cx + Math.cos(angleB) * b.dist;
+      const by = cy + Math.sin(angleB) * b.dist;
+      const d = Math.hypot(ax - bx, ay - by);
+      if (d < 80) {
+        sctx.beginPath(); sctx.moveTo(ax, ay); sctx.lineTo(bx, by);
+        sctx.strokeStyle = `rgba(255,107,53,${.03 * (1 - d / 80)})`;
+        sctx.lineWidth = .5; sctx.stroke();
+      }
+    }
+  });
+
+  requestAnimationFrame(drawGalaxy);
+}
+drawGalaxy();
+
+// ── Nebula Particles ──
+const canvas = document.getElementById('particles-canvas');
+const ctx = canvas.getContext('2d');
+let pw, ph;
+function presize() { pw = canvas.width = window.innerWidth; ph = canvas.height = window.innerHeight; }
+presize(); window.addEventListener('resize', presize);
+
+const NEBULA_COLORS = [
+  { h: 25, s: 90, l: 55 },  // orange
+  { h: 200, s: 80, l: 55 }, // blue
+  { h: 270, s: 70, l: 55 }, // purple
+];
+const nebPts = Array.from({length:120}, () => {
+  const col = NEBULA_COLORS[Math.floor(Math.random() * NEBULA_COLORS.length)];
+  return {
+    x: Math.random() * pw, y: Math.random() * ph,
+    vx: (Math.random() - .5) * .15, vy: (Math.random() - .5) * .15,
+    r: Math.random() * 3 + .8,
+    hue: col.h, sat: col.s, lig: col.l,
+    a: .1 + Math.random() * .2
+  };
+});
+
+function drawNebula() {
+  ctx.clearRect(0, 0, pw, ph);
+  nebPts.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0 || p.x > pw) p.vx *= -1;
+    if (p.y < 0 || p.y > ph) p.vy *= -1;
+    const alpha = p.a + Math.sin(Date.now() * .001 * p.a) * .05;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue},${p.sat}%,${p.lig}%,${alpha})`;
+    ctx.fill();
+    // soft glow
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue},${p.sat}%,${p.lig}%,${alpha * .06})`;
+    ctx.fill();
+  });
+
+  // Connections
+  for (let i = 0; i < nebPts.length; i++) {
+    for (let j = i + 1; j < nebPts.length; j++) {
+      const dx = nebPts[i].x - nebPts[j].x, dy = nebPts[i].y - nebPts[j].y, dist = Math.hypot(dx, dy);
+      if (dist < 180) {
+        ctx.beginPath(); ctx.moveTo(nebPts[i].x, nebPts[i].y); ctx.lineTo(nebPts[j].x, nebPts[j].y);
+        const avgHue = (nebPts[i].hue + nebPts[j].hue) / 2;
+        ctx.strokeStyle = `hsla(${avgHue},70%,60%,${.03 * (1 - dist / 180)})`;
+        ctx.lineWidth = .6; ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawNebula);
+}
+drawNebula();
+
+// ── Section Reveal Observer ──
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      revealObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: .1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ── Hero Mouse Parallax ──
+document.addEventListener('mousemove', e => {
+  const xFactor = (e.clientX / window.innerWidth - .5) * 2;
+  const yFactor = (e.clientY / window.innerHeight - .5) * 2;
+  const orb = document.querySelector('.hero .orb');
+  const orb2 = document.querySelector('.hero .orb-2');
+  if (orb) orb.style.transform = `translate(calc(-50% + ${xFactor * 20}px), calc(-50% + ${yFactor * 15}px))`;
+  if (orb2) orb2.style.transform = `translate(${xFactor * 30}px, ${yFactor * -25}px)`;
+});
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Translations ──
+const LANG = {
+  fr: {
+    'nav.home': 'Accueil', 'nav.training': 'Séance', 'nav.timer': 'Chrono',
+    'nav.videos': 'Vidéos', 'nav.resources': 'Ressources', 'nav.science': '🔬 Scientifique', 'nav.library': 'Bibliothèque',
+    'hero.sub': 'Entraînement quotidien — 15 minutes par jour',
+    'hero.tagline': 'Programme dynamique, chronomètre intégré, vidéos HD et exercices progressifs pour maîtriser l\'art oratoire.',
+    'hero.ctaPrimary': 'Démarrer la séance', 'hero.ctaSecondary': 'Explorer les ressources',
+    'hero.stat1': 'Vidéos HD', 'hero.stat2': 'Exercices', 'hero.stat3': 'Par semaine', 'hero.stat4': 'Par séance',
+    'hero.scroll': 'Défiler',
+    'training.label': 'Programme', 'training.titlePre': 'Séance du', 'training.desc': 'Sélectionné pour toi. 15 minutes chrono.',
+    'progress.label': 'Progression', 'progress.title': 'Résultats attendus',
+    'progress.card1': 'Prise de conscience des tics', 'progress.card2': 'Fluidité après 1 mois',
+    'progress.card3': 'Répartie naturelle', 'progress.card4': 'Temps minimal requis',
+    'timer.label': 'Chronomètre', 'timer.title': 'Minuteur d\'entraînement',
+    'timer.start': '▶ Démarrer', 'timer.pause': '⏸ Pause', 'timer.reset': '↺ Reset',
+    'videos.label': 'Vidéos', 'videos.title': 'Exercices rapides',
+    'videos.sub': 'Sophie Dussart — Coaching express 2 min',
+    'res.card1Title': '15 exercices (PDF)', 'res.card1Desc': 'Programme complet imprimable : improvisation, articulation, respiration, structure. Planning 15 min/jour.', 'res.card1Link': 'Télécharger le PDF',
+    'res.card2Title': '15 exercices (HTML)', 'res.card2Desc': 'Version interactive avec liens cliquables vers les vidéos et ressources externes.', 'res.card2Link': 'Ouvrir la page',
+    'res.card3Title': 'Bibliothèque complète', 'res.card3Desc': 'Catalogue des 18 vidéos HD avec descriptions, tags et liens YouTube.', 'res.card3Link': 'Accéder à la bibliothèque',
+    'res.card4Title': 'Simulateur Letmotiv', 'res.card4Desc': 'Générateur de sujets aléatoires pour l\'improvisation. 2 min chrono, choix de l\'axe de travail.', 'res.card4Link': 'Lancer le simulateur',
+    'res.card5Title': 'Objectif Éloquence', 'res.card5Desc': '5 exercices d\'éloquence : enregistrement, adaptation au public, moment star, conclusion impact, miroir des émotions.', 'res.card5Link': 'Voir les exercices',
+    'res.card6Title': '40 exercices d\'impro', 'res.card6Desc': 'Guide complet d\'improvisation théâtrale : exercices solo, duo et groupe. Progressif.', 'res.card6Link': 'Découvrir',
+    'res.card7Title': 'Répartie — Cours le Foyer', 'res.card7Desc': '6 exercices d\'acteur pour répondre du tac au tac : écoute, tempo, respiration, improvisation cadrée.', 'res.card7Link': 'Voir les exercices',
+    'res.card8Title': 'Réduire les tics de langage', 'res.card8Desc': 'Exercices pour éliminer "euh", "donc", "en fait" : conscience, enregistrement, rythme, improvisation guidée.', 'res.card8Link': 'Lire l\'article',
+    'res.card9Title': 'Think Fast, Talk Smart', 'res.card9Desc': 'Stanford — 58 min. Atelier complet d\'improvisation et de communication spontanée (VO).', 'res.card9Link': 'Voir la vidéo',
+    'res.card10Title': 'Respiration guidée', 'res.card10Desc': 'Exercice interactif de respiration carrée. Animation visuelle, cycles progressifs, idéal avant une prise de parole.', 'res.card10Link': 'Ouvrir l\'outil',
+    'res.card11Title': 'Générateur de sujets', 'res.card11Desc': 'Tire un sujet d\'improvisation aléatoire (25+ sujets) avec chronomètre intégré. Convaincre, raconter, expliquer, défendre.',     'res.card11Link': 'Tirer un sujet',
+    'res.scienceTitle': 'OSCAR-S — Scientifique', 'res.scienceDesc': 'Module scientifique : méthode OSCAR-S, programme 30 jours, 8 exercices, générateur de questions, grille d\'évaluation.', 'res.scienceLink': 'Accéder au module',
+    'footer.tagline': 'Oratron — Système d\'entraînement à la prise de parole · Fait avec passion',
+    'footer.createdBy': 'Créé par', 'footer.role': 'Design & Développement',
+  },
+  en: {
+    'nav.home': 'Home', 'nav.training': 'Session', 'nav.timer': 'Timer',
+    'nav.videos': 'Videos', 'nav.resources': 'Resources', 'nav.science': '🔬 Scientific', 'nav.library': 'Library',
+    'hero.sub': 'Daily training — 15 minutes a day',
+    'hero.tagline': 'Dynamic program, integrated timer, HD videos, and progressive exercises to master public speaking.',
+    'hero.ctaPrimary': 'Start Session', 'hero.ctaSecondary': 'Explore Resources',
+    'hero.stat1': 'HD Videos', 'hero.stat2': 'Exercises', 'hero.stat3': 'Per week', 'hero.stat4': 'Per session',
+    'hero.scroll': 'Scroll',
+    'training.label': 'Program', 'training.titlePre': 'Session of', 'training.desc': 'Selected for you. 15 minutes on the clock.',
+    'progress.label': 'Progress', 'progress.title': 'Expected Results',
+    'progress.card1': 'Awareness of filler words', 'progress.card2': 'Fluidity after 1 month',
+    'progress.card3': 'Natural wit', 'progress.card4': 'Minimum daily time',
+    'timer.label': 'Timer', 'timer.title': 'Training Timer',
+    'timer.start': '▶ Start', 'timer.pause': '⏸ Pause', 'timer.reset': '↺ Reset',
+    'videos.label': 'Videos', 'videos.title': 'Quick Exercises',
+    'videos.sub': 'Sophie Dussart — 2-min Express Coaching',
+    'res.card1Title': '15 Exercises (PDF)', 'res.card1Desc': 'Full printable program: improvisation, articulation, breathing, structure. 15 min/day schedule.', 'res.card1Link': 'Download PDF',
+    'res.card2Title': '15 Exercises (HTML)', 'res.card2Desc': 'Interactive version with clickable links to videos and external resources.', 'res.card2Link': 'Open Page',
+    'res.card3Title': 'Full Library', 'res.card3Desc': 'Catalog of 18 HD videos with descriptions, tags, and YouTube links.', 'res.card3Link': 'Go to Library',
+    'res.card4Title': 'Letmotiv Simulator', 'res.card4Desc': 'Random topic generator for improvisation. 2-min timer, choose your focus area.', 'res.card4Link': 'Launch Simulator',
+    'res.card5Title': 'Objectif Éloquence', 'res.card5Desc': '5 eloquence exercises: recording, audience adaptation, star moment, impactful conclusion, emotion mirroring.', 'res.card5Link': 'View Exercises',
+    'res.card6Title': '40 Improv Exercises', 'res.card6Desc': 'Complete theater improvisation guide: solo, duo, and group exercises. Progressive difficulty.', 'res.card6Link': 'Discover',
+    'res.card7Title': 'Wit — Cours le Foyer', 'res.card7Desc': '6 actor exercises to respond on the spot: listening, tempo, breathing, framed improvisation.', 'res.card7Link': 'View Exercises',
+    'res.card8Title': 'Reduce Filler Words', 'res.card8Desc': 'Exercises to eliminate "uh", "like", "you know": awareness, recording, rhythm, guided improv.', 'res.card8Link': 'Read Article',
+    'res.card9Title': 'Think Fast, Talk Smart', 'res.card9Desc': 'Stanford — 58 min. Complete workshop on improvisation and spontaneous communication.', 'res.card9Link': 'Watch Video',
+    'res.card10Title': 'Guided Breathing', 'res.card10Desc': 'Interactive box breathing exercise. Visual animation, progressive cycles, ideal before public speaking.', 'res.card10Link': 'Open Tool',
+    'res.card11Title': 'Topic Generator', 'res.card11Desc': 'Random improvisation topic generator (25+ topics) with built-in timer. Persuade, narrate, explain, argue.', 'res.card11Link': 'Draw a Topic',
+    'res.scienceTitle': 'OSCAR-S — Scientific', 'res.scienceDesc': 'Scientific module: OSCAR-S method, 30-day program, 8 exercises, question generator, evaluation grid.', 'res.scienceLink': 'Access Module',
+    'footer.tagline': 'Oratron — Public Speaking Training System · Made with passion',
+    'footer.createdBy': 'Created by', 'footer.role': 'Design & Development',
+  }
+};
+
+const TYPING_FR = [
+  "Prendre la parole avec impact.", "Maîtriser l'art oratoire.",
+  "Parler sans préparation.", "Captiver son auditoire.",
+  "Développer sa répartie.", "Gagner en confiance.",
+];
+const TYPING_EN = [
+  "Speak with impact.", "Master the art of oratory.",
+  "Impromptu speaking.", "Captivate your audience.",
+  "Develop your wit.", "Build confidence.",
+];
+
+const QUOTES_FR = [
+  { text: "La parole est moitié à celui qui parle, moitié à celui qui écoute.", author: "Montaigne" },
+  { text: "Le secret de l'éloquence est de dire tout ce qu'il faut, et de ne dire que ce qu'il faut.", author: "La Rochefoucauld" },
+  { text: "Une bonne parole est comme un bon arbre, sa racine est ferme et ses branches touchent le ciel.", author: "Proverbe arabe" },
+  { text: "Bien parler a ceci de supérieur sur le bien écrire qu'on peut y ajouter le jeu de la physionomie, l'accent de la conviction, le geste de la pensée.", author: "Georges Couthon" },
+  { text: "L'éloquence est l'art de dire bien ce que l'on pense ; mais pour cela, il faut penser ce que l'on dit.", author: "Joseph Joubert" },
+  { text: "Les paroles sont des forces ; elles peuvent aussi bien tuer que ressusciter.", author: "Victor Hugo" },
+  { text: "Parler en public, c'est accepter d'être vu, entendu, jugé — et c'est aussi la plus belle façon d'exister.", author: "Cyril Lancart" },
+];
+const QUOTES_EN = [
+  { text: "Speech is half belonging to the speaker, half to the listener.", author: "Michel de Montaigne" },
+  { text: "The secret of eloquence is to say everything that needs to be said, and only what needs to be said.", author: "La Rochefoucauld" },
+  { text: "A good word is like a good tree; its root is firm and its branches touch the sky.", author: "Arabic Proverb" },
+  { text: "Speaking well has this superiority over writing well: you can add facial play, the accent of conviction, the gesture of thought.", author: "Georges Couthon" },
+  { text: "Eloquence is the art of saying well what one thinks; but for that, one must think what one says.", author: "Joseph Joubert" },
+  { text: "Words are forces; they can kill as well as resurrect.", author: "Victor Hugo" },
+  { text: "Speaking in public means accepting to be seen, heard, judged — and it is also the most beautiful way to exist.", author: "Cyril Lancart" },
+];
+
+const PROGRAM_FR = [
+  { name: "Lundi", desc: "Échauffement vocal & improvisation", exos: [
+    { num: "01", tag: "voix", tl: "Voix", title: "Virelangues progressifs", desc: "Répète 'Les chaussettes de l'archiduchesse' lentement → de plus en plus vite.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🔊" },
+    { num: "02", tag: "impro", tl: "Impro", title: "Discours improvisé 2 min", desc: "Tire un sujet au hasard (Letmotiv), prépare 30s, parle 2 min. Enregistre-toi.", link: "https://www.letmotiv.fr/simulateur-prise-de-parole-en-public", icon: "🎲" },
+    { num: "03", tag: "stress", tl: "Stress", title: "Respiration carrée", desc: "4s inspire → 4s retiens → 4s expire → 4s pause. 5 cycles.", link: "../Vidéos/FR01 - Sophie Dussart - LA RESPIRATION.mp4", icon: "🌬️" },
+  ]},
+  { name: "Mardi", desc: "Fluidité & rebond verbal", exos: [
+    { num: "04", tag: "impro", tl: "Impro", title: "Association libre 2 min", desc: "Choisis un mot → parle 2 min sans t'arrêter. Enchaîne sans filtre.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🧠" },
+    { num: "05", tag: "impro", tl: "Impro", title: "Oui, et... / Non, mais...", desc: "5 réponses en 'Oui, et...' puis 5 en 'Non, mais...'. Construction rapide.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🔄" },
+    { num: "06", tag: "voix", tl: "Voix", title: "Articulation forcée", desc: "Lis un texte en exagérant chaque syllabe, puis normal. Compare les deux.", link: "../Vidéos/FR02 - Sophie Dussart - L'ARTICULATION.mp4", icon: "🗣️" },
+  ]},
+  { name: "Mercredi", desc: "Rythme & écoute active", exos: [
+    { num: "07", tag: "voix", tl: "Voix", title: "Lecture rythmée", desc: "Pause toutes les 5-7 mots. Varie lent/rapide selon l'importance.", link: "../Ressources/exercices_prise_de_parole.html", icon: "📖" },
+    { num: "08", tag: "impro", tl: "Impro", title: "Pause gagnante", desc: "Phrase déstabilisante → respire → pause 1s → réponse courte. ×10.", link: "../Ressources/exercices_prise_de_parole.html", icon: "⏸️" },
+    { num: "09", tag: "struct", tl: "Struct", title: "Problem-Solution-Benefit", desc: "Applique cette structure sur 3 sujets différents en 1 min chacun.", link: "../Ressources/exercices_prise_de_parole.html", icon: "📐" },
+  ]},
+  { name: "Jeudi", desc: "Respiration & auto-analyse", exos: [
+    { num: "10", tag: "stress", tl: "Stress", title: "Routine 90 secondes", desc: "Inspire 4 / expire 6. 6 cycles. Phrase simple sur expiration longue.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🧘" },
+    { num: "11", tag: "struct", tl: "Struct", title: "Enregistrement 3-pass", desc: "Filme-toi 3 min → regarde 3× : sans son / yeux fermés / normal.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🎥" },
+    { num: "12", tag: "voix", tl: "Voix", title: "Intonation & émotions", desc: "Dis la même phrase avec 3 émotions : colère, joie, doute.", link: "../Vidéos/FR04 - Sophie Dussart - L'INTONATION.mp4", icon: "🎵" },
+  ]},
+  { name: "Vendredi", desc: "Répartie & agilité mentale", exos: [
+    { num: "13", tag: "impro", tl: "Impro", title: "Jeu des 3 options", desc: "Pour chaque attaque : humour / limite / question. 5 scenarios.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🎯" },
+    { num: "14", tag: "impro", tl: "Impro", title: "Dernier mot", desc: "A parle → B reprend le dernier mot et rebondit. 2 min et on inverse.", link: "../Ressources/exercices_prise_de_parole.html", icon: "💬" },
+    { num: "15", tag: "voix", tl: "Voix", title: "Réplique courte 7 mots", desc: "Max 7 mots par réponse. 10 échanges. Net et précis.", link: "../Ressources/exercices_prise_de_parole.html", icon: "✂️" },
+  ]},
+  { name: "Samedi", desc: "Confiance & improvisation", exos: [
+    { num: "16", tag: "stress", tl: "Stress", title: "Power pose + Confiance", desc: "2 min posture Superman. Puis discours improvisé 3 min.", link: "../Vidéos/FR06 - Sophie Dussart - CONFIANCE EN SOI.mp4", icon: "⚡" },
+    { num: "17", tag: "impro", tl: "Impro", title: "Débat solo POUR/CONTRE", desc: "Sujet polémique. 2 min POUR, 2 min CONTRE. Seul face caméra.", link: "../Ressources/exercices_prise_de_parole.html", icon: "⚔️" },
+    { num: "18", tag: "struct", tl: "Struct", title: "Mind mapping éclair", desc: "3 mots-clés → 1 min intro + 2 min dév + 1 min conclusion.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🗺️" },
+  ]},
+  { name: "Dimanche", desc: "Révision & récupération", exos: [
+    { num: "19", tag: "stress", tl: "Stress", title: "Respiration & relaxation", desc: "Respiration carrée 5 min + Routine 90s 3×. Calme et pose.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🧘" },
+    { num: "20", tag: "struct", tl: "Struct", title: "Révision des vidéos", desc: "Regarde 2-3 vidéos. Note ce que tu veux améliorer cette semaine.", link: "../index.html", icon: "📺" },
+    { num: "21", tag: "voix", tl: "Voix", title: "Échauffement vocal doux", desc: "5 min : respiration → lèvres → langue → sirène (weeeaawww).", link: "../Vidéos/01 - Julian Treasure - How to Speak So People Want to Listen - Vocal Exercises.mp4", icon: "🎤" },
+  ]},
+];
+
+const PROGRAM_EN = [
+  { name: "Monday", desc: "Vocal warm-up & improvisation", exos: [
+    { num: "01", tag: "voix", tl: "Voice", title: "Tongue Twisters", desc: "Repeat 'She sells seashells' slowly → faster and faster.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🔊" },
+    { num: "02", tag: "impro", tl: "Improv", title: "Impromptu Speech 2 min", desc: "Pick a random topic (Letmotiv), prep 30s, speak 2 min. Record yourself.", link: "https://www.letmotiv.fr/simulateur-prise-de-parole-en-public", icon: "🎲" },
+    { num: "03", tag: "stress", tl: "Stress", title: "Box Breathing", desc: "4s in → 4s hold → 4s out → 4s pause. 5 cycles.", link: "../Vidéos/FR01 - Sophie Dussart - LA RESPIRATION.mp4", icon: "🌬️" },
+  ]},
+  { name: "Tuesday", desc: "Fluidity & verbal rebound", exos: [
+    { num: "04", tag: "impro", tl: "Improv", title: "Free Association 2 min", desc: "Pick a word → speak 2 min without stopping. No filter.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🧠" },
+    { num: "05", tag: "impro", tl: "Improv", title: "Yes, and... / No, but...", desc: "5 responses starting with 'Yes, and...' then 5 with 'No, but...'. Fast construction.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🔄" },
+    { num: "06", tag: "voix", tl: "Voice", title: "Forced Articulation", desc: "Read a text exaggerating every syllable, then normal. Compare.", link: "../Vidéos/FR02 - Sophie Dussart - L'ARTICULATION.mp4", icon: "🗣️" },
+  ]},
+  { name: "Wednesday", desc: "Rhythm & active listening", exos: [
+    { num: "07", tag: "voix", tl: "Voice", title: "Rhythmic Reading", desc: "Pause every 5-7 words. Vary slow/fast by importance.", link: "../Ressources/exercices_prise_de_parole.html", icon: "📖" },
+    { num: "08", tag: "impro", tl: "Improv", title: "Power Pause", desc: "Disruptive phrase → breathe → pause 1s → short reply. ×10.", link: "../Ressources/exercices_prise_de_parole.html", icon: "⏸️" },
+    { num: "09", tag: "struct", tl: "Struct", title: "Problem-Solution-Benefit", desc: "Apply this structure to 3 different topics, 1 min each.", link: "../Ressources/exercices_prise_de_parole.html", icon: "📐" },
+  ]},
+  { name: "Thursday", desc: "Breathing & self-analysis", exos: [
+    { num: "10", tag: "stress", tl: "Stress", title: "90-Second Routine", desc: "Inhale 4 / exhale 6. 6 cycles. Simple phrase on long exhale.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🧘" },
+    { num: "11", tag: "struct", tl: "Struct", title: "3-Pass Recording", desc: "Record 3 min → watch 3×: without sound / eyes closed / normal.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🎥" },
+    { num: "12", tag: "voix", tl: "Voice", title: "Intonation & Emotions", desc: "Say the same phrase with 3 emotions: anger, joy, doubt.", link: "../Vidéos/FR04 - Sophie Dussart - L'INTONATION.mp4", icon: "🎵" },
+  ]},
+  { name: "Friday", desc: "Wit & mental agility", exos: [
+    { num: "13", tag: "impro", tl: "Improv", title: "3-Option Game", desc: "For each attack: humor / boundary / question. 5 scenarios.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🎯" },
+    { num: "14", tag: "impro", tl: "Improv", title: "Last Word", desc: "A speaks → B takes the last word and bounces. 2 min then swap.", link: "../Ressources/exercices_prise_de_parole.html", icon: "💬" },
+    { num: "15", tag: "voix", tl: "Voice", title: "7-Word Reply", desc: "Max 7 words per reply. 10 exchanges. Sharp and precise.", link: "../Ressources/exercices_prise_de_parole.html", icon: "✂️" },
+  ]},
+  { name: "Saturday", desc: "Confidence & improvisation", exos: [
+    { num: "16", tag: "stress", tl: "Stress", title: "Power Pose + Confidence", desc: "2 min Superman pose. Then 3 min impromptu speech.", link: "../Vidéos/FR06 - Sophie Dussart - CONFIANCE EN SOI.mp4", icon: "⚡" },
+    { num: "17", tag: "impro", tl: "Improv", title: "Solo Debate FOR/AGAINST", desc: "Controversial topic. 2 min FOR, 2 min AGAINST. On camera.", link: "../Ressources/exercices_prise_de_parole.html", icon: "⚔️" },
+    { num: "18", tag: "struct", tl: "Struct", title: "Quick Mind Mapping", desc: "3 keywords → 1 min intro + 2 min body + 1 min conclusion.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🗺️" },
+  ]},
+  { name: "Sunday", desc: "Review & recovery", exos: [
+    { num: "19", tag: "stress", tl: "Stress", title: "Breathing & Relaxation", desc: "Box breathing 5 min + 90s routine 3×. Calm and steady.", link: "../Ressources/exercices_prise_de_parole.html", icon: "🧘" },
+    { num: "20", tag: "struct", tl: "Struct", title: "Video Review", desc: "Watch 2-3 videos. Note what you want to improve this week.", link: "../index.html", icon: "📺" },
+    { num: "21", tag: "voix", tl: "Voice", title: "Gentle Vocal Warm-up", desc: "5 min: breathing → lips → tongue → siren (weeeaawww).", link: "../Vidéos/01 - Julian Treasure - How to Speak So People Want to Listen - Vocal Exercises.mp4", icon: "🎤" },
+  ]},
+];
+
+let currentLang = localStorage.getItem('oratron-lang') || 'fr';
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('oratron-lang', lang);
+  const dict = LANG[lang];
+
+  // Static HTML
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (dict[key]) el.textContent = dict[key];
+  });
+
+  // Toggle UI
+  document.querySelectorAll('.lang-toggle span').forEach(s => {
+    s.classList.toggle('active', s.dataset.lang === lang);
+  });
+
+  // Quotes
+  const qs = lang === 'fr' ? QUOTES_FR : QUOTES_EN;
+  const qi = parseInt(sessionStorage.getItem('oratron-qi') || '0');
+  document.getElementById('quote-text').textContent = qs[qi].text;
+  document.getElementById('quote-author').textContent = '— ' + qs[qi].author;
+
+  // Typewriter
+  const typing = lang === 'fr' ? TYPING_FR : TYPING_EN;
+  const el = document.getElementById('typewriter');
+  const currentText = el.textContent;
+  if (!typing.includes(currentText)) el.textContent = typing[0];
+
+  // Program
+  const program = lang === 'fr' ? PROGRAM_FR : PROGRAM_EN;
+  const today = new Date().getDay();
+  const dayIndex = today === 0 ? 6 : today - 1;
+  const day = program[dayIndex];
+  document.getElementById('day-name').textContent = day.name;
+  document.getElementById('day-desc').textContent = day.desc;
+  document.getElementById('day-num').textContent = dayIndex + 1;
+  // progress ring
+  const ring = document.getElementById('progress-ring');
+  const pct = ((dayIndex + 1) / 7);
+  ring.style.strokeDashoffset = 69.1 * (1 - pct);
+  const grid = document.getElementById('exos-grid');
+  grid.innerHTML = day.exos.map(e => `
+    <div class="exo-card">
+      <div class="icon-big">${e.icon}</div>
+      <div class="header"><span class="num">${lang === 'fr' ? 'Exercice' : 'Exercise'} ${e.num}</span> <span class="tag ${e.tag}">${e.tl}</span></div>
+      <h3>${e.title}</h3>
+      <p>${e.desc}</p>
+      <a class="exo-link" href="${e.link}" target="_blank">${lang === 'fr' ? 'Lancer l\'exercice' : 'Start Exercise'} →</a>
+    </div>
+  `).join('');
+}
+
+// ── Quote rotation ──
+let qi = 0;
+setInterval(() => {
+  const qs = currentLang === 'fr' ? QUOTES_FR : QUOTES_EN;
+  qi = (qi + 1) % qs.length;
+  sessionStorage.setItem('oratron-qi', qi);
+  document.getElementById('quote-text').style.opacity = '0';
+  document.getElementById('quote-author').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('quote-text').textContent = qs[qi].text;
+    document.getElementById('quote-author').textContent = '— ' + qs[qi].author;
+    document.getElementById('quote-text').style.opacity = '1';
+    document.getElementById('quote-author').style.opacity = '1';
+  }, 500);
+}, 8000);
+
+// ── Typewriter animation ──
+let ti = 0, tc = 0, isDeleting = false;
+function typeEffect() {
+  const el = document.getElementById('typewriter');
+  const typing = currentLang === 'fr' ? TYPING_FR : TYPING_EN;
+  const current = typing[ti];
+  if (!isDeleting) {
+    el.textContent = current.substring(0, tc + 1);
+    tc++;
+    if (tc === current.length) { setTimeout(() => { isDeleting = true; typeEffect(); }, 2000); return; }
+  } else {
+    el.textContent = current.substring(0, tc);
+    tc--;
+    if (tc < 0) { isDeleting = false; ti = (ti + 1) % typing.length; tc = 0; }
+  }
+  setTimeout(typeEffect, isDeleting ? 30 : 60);
+}
+typeEffect();
+
+// ── Counter animation ──
+function initCounters() {
+  const counters = document.querySelectorAll('[data-target]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        const target = parseInt(el.dataset.target);
+        let current = 0;
+        const step = Math.ceil(target / 40);
+        const interval = setInterval(() => {
+          current += step;
+          if (current >= target) { current = target; clearInterval(interval); }
+          el.innerHTML = current + (el.querySelector('.small')?.outerHTML || el.querySelector('.suffix')?.outerHTML || '');
+        }, 30);
+        observer.unobserve(el);
+      }
+    });
+  }, { threshold: .5 });
+  counters.forEach(c => observer.observe(c));
+}
+initCounters();
+
+// ── Lang toggle ──
+document.getElementById('lang-toggle').addEventListener('click', () => {
+  const next = currentLang === 'fr' ? 'en' : 'fr';
+  applyLanguage(next);
+});
+
+// Init lang
+applyLanguage(currentLang);
+</script>
+</body>
+</html>

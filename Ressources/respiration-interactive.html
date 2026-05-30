@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Respiration Guidée · Oratron</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #050508; color: #e0e0e0;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px; overflow: hidden;
+}
+h1 {
+  font-size: 1.4em; font-weight: 300; letter-spacing: 4px; text-transform: uppercase;
+  color: #ff6b35; margin-bottom: 8px;
+}
+h1 strong { font-weight: 700; }
+#phase-label {
+  font-size: 1.8em; font-weight: 700; margin: 16px 0 8px;
+  background: linear-gradient(135deg, #ff6b35, #4fc3f7);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+#phase-sub {
+  font-size: .85em; color: #666; margin-bottom: 24px; letter-spacing: 1px;
+}
+
+.breath-circle {
+  position: relative; width: 220px; height: 220px; margin: 10px auto;
+}
+.breath-circle svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.breath-circle .bg-circle { fill: none; stroke: rgba(255,255,255,.04); stroke-width: 4; }
+.breath-circle .progress-circle {
+  fill: none; stroke: url(#breathGrad); stroke-width: 4; stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+.breath-circle .center-text {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-size: 3em; font-weight: 700; color: #fff;
+  text-shadow: 0 0 40px rgba(255,107,53,.15);
+}
+.breath-circle .guide-box {
+  position: absolute; top: 50%; left: 50%; width: 60px; height: 60px;
+  transform: translate(-50%,-50%); border-radius: 12px;
+  background: rgba(255,107,53,.08); border: 1px solid rgba(255,107,53,.12);
+  transition: all .8s cubic-bezier(.16,1,.3,1);
+}
+.guide-box.inhale { transform: translate(-50%,-50%) scale(3); border-color: #4fc3f7; background: rgba(79,195,247,.06); }
+.guide-box.hold { transform: translate(-50%,-50%) scale(3); border-color: #ff6b35; background: rgba(255,107,53,.06); }
+.guide-box.exhale { transform: translate(-50%,-50%) scale(.8); border-color: #81c784; background: rgba(129,199,132,.06); }
+
+.controls { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; justify-content: center; }
+.controls button {
+  padding: 10px 28px; border-radius: 50px; border: none; font-weight: 600;
+  font-size: .82em; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: .3s;
+}
+.controls .start { background: linear-gradient(135deg,#ff6b35,#d94a1a); color: #fff; box-shadow: 0 0 20px rgba(255,107,53,.2); }
+.controls .start:hover { box-shadow: 0 0 40px rgba(255,107,53,.5); transform: scale(1.03); }
+.controls .stop { background: rgba(255,255,255,.06); color: #bbb; border: 1px solid rgba(255,255,255,.08); }
+.controls .stop:hover { background: rgba(255,255,255,.1); }
+
+.meta { color: #555; font-size: .72em; margin-top: 30px; text-align: center; letter-spacing: 1px; }
+.meta a { color: #ff6b35; text-decoration: none; }
+
+.lang-toggle {
+  position: fixed; top: 20px; right: 20px; display: flex; gap: 4px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 3px; cursor: pointer; z-index: 10;
+}
+.lang-toggle span {
+  padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600; letter-spacing: .5px; transition: .3s; color: #555;
+}
+.lang-toggle span.active { background: #ff6b35; color: #fff; }
+
+.count { font-size: .8em; color: #555; margin-top: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+
+<div class="lang-toggle" id="lang-toggle">
+  <span class="active" data-lang="fr">FR</span>
+  <span data-lang="en">EN</span>
+</div>
+
+<h1>🧘 <strong id="title-text">Respiration Carrée</strong></h1>
+<div id="phase-label">Inspirez</div>
+<div id="phase-sub" data-i18n="sub">4 secondes · par le nez</div>
+
+<div class="breath-circle">
+  <svg viewBox="0 0 220 220">
+    <defs>
+      <linearGradient id="breathGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#ff6b35"/>
+        <stop offset="100%" stop-color="#4fc3f7"/>
+      </linearGradient>
+    </defs>
+    <circle class="bg-circle" cx="110" cy="110" r="100"/>
+    <circle class="progress-circle" id="progress" cx="110" cy="110" r="100"
+      stroke-dasharray="628.3" stroke-dashoffset="0"/>
+  </svg>
+  <div class="guide-box" id="guide-box"></div>
+  <div class="center-text" id="countdown">4</div>
+</div>
+
+<div class="count" id="cycle-count">Cycle 1 / 5</div>
+
+<div class="controls">
+  <button class="start" id="btn-start" data-i18n="start">▶ Démarrer</button>
+  <button class="stop" id="btn-stop" data-i18n="stop">⏹ Arrêter</button>
+</div>
+
+<div class="meta">
+  <span data-i18n="tip">Inspiration 4s · Rétention 4s · Expiration 4s · Pause 4s</span><br>
+  <a href="../site-entrainement/index.html">← Retour à Oratron</a>
+</div>
+
+<script>
+const L = {
+  fr: {
+    title: 'Respiration Carrée', sub: '4 secondes · par le nez',
+    start: '▶ Démarrer', stop: '⏹ Arrêter',
+    tip: 'Inspiration 4s · Rétention 4s · Expiration 4s · Pause 4s',
+    phases: ['Inspirez', 'Retenez', 'Expirez', 'Pause'],
+    phaseSubs: ['par le nez', 'bloquez doucement', 'par la bouche', 'videz vos poumons'],
+    cycleLabel: 'Cycle', of: 'sur'
+  },
+  en: {
+    title: 'Box Breathing', sub: '4 seconds · through your nose',
+    start: '▶ Start', stop: '⏹ Stop',
+    tip: 'Inhale 4s · Hold 4s · Exhale 4s · Hold 4s',
+    phases: ['Inhale', 'Hold', 'Exhale', 'Hold'],
+    phaseSubs: ['through your nose', 'gently hold', 'through your mouth', 'empty your lungs'],
+    cycleLabel: 'Cycle', of: 'of'
+  }
+};
+
+const PHASE_DUR = 4;
+const TOTAL_CYCLES = 5;
+let lang = localStorage.getItem('oratron-lang') || 'fr';
+let running = false;
+let phase = 0; // 0=inhale, 1=hold, 2=exhale, 3=hold
+let count = PHASE_DUR;
+let cycle = 1;
+let timer = null;
+
+function applyLang(l) {
+  lang = l;
+  localStorage.setItem('oratron-lang', l);
+  document.querySelectorAll('.lang-toggle span').forEach(s => s.classList.toggle('active', s.dataset.lang === l));
+  const d = L[l];
+  document.getElementById('title-text').textContent = d.title;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (d[k]) el.textContent = d[k];
+  });
+  if (!running) { document.getElementById('phase-label').textContent = d.phases[0]; document.getElementById('phase-sub').textContent = d.phaseSubs[0]; }
+  updateCycleText();
+}
+
+function updateCycleText() {
+  const d = L[lang];
+  document.getElementById('cycle-count').textContent = `${d.cycleLabel} ${cycle} ${d.of} ${TOTAL_CYCLES}`;
+}
+
+function updateUI() {
+  const d = L[lang];
+  document.getElementById('phase-label').textContent = d.phases[phase];
+  document.getElementById('phase-sub').textContent = d.phaseSubs[phase];
+  document.getElementById('countdown').textContent = count;
+  const total = PHASE_DUR;
+  const progress = (total - count) / total;
+  const circumference = 628.3;
+  document.getElementById('progress').style.strokeDashoffset = circumference * (1 - progress);
+
+  const box = document.getElementById('guide-box');
+  box.className = 'guide-box';
+  if (phase === 0) box.classList.add('inhale');
+  else if (phase === 1) box.classList.add('hold');
+  else if (phase === 2) box.classList.add('exhale');
+  else box.classList.add('hold');
+}
+
+function tick() {
+  count--;
+  if (count < 0) {
+    phase = (phase + 1) % 4;
+    count = PHASE_DUR;
+    if (phase === 0) {
+      cycle++;
+      if (cycle > TOTAL_CYCLES) {
+        stopBreathing();
+        document.getElementById('phase-label').textContent = L[lang].phases[0];
+        document.getElementById('phase-sub').textContent = '✨ ' + (lang === 'fr' ? 'Terminé !' : 'Complete!');
+        return;
+      }
+    }
+  }
+  updateUI();
+  updateCycleText();
+}
+
+function startBreathing() {
+  if (running) return;
+  running = true;
+  document.getElementById('btn-start').textContent = L[lang].start;
+  phase = 0; count = PHASE_DUR;
+  const savedCycle = parseInt(sessionStorage.getItem('breath-cycle') || '1');
+  cycle = savedCycle > TOTAL_CYCLES ? 1 : savedCycle;
+  updateUI(); updateCycleText();
+  timer = setInterval(tick, 1000);
+}
+
+function stopBreathing() {
+  running = false;
+  clearInterval(timer);
+  timer = null;
+  const d = L[lang];
+  document.getElementById('phase-label').textContent = d.phases[0];
+  document.getElementById('phase-sub').textContent = d.phaseSubs[0];
+  phase = 0; count = PHASE_DUR;
+  cycle = 1;
+  updateUI(); updateCycleText();
+  sessionStorage.removeItem('breath-cycle');
+}
+
+document.getElementById('btn-start').onclick = startBreathing;
+document.getElementById('btn-stop').onclick = stopBreathing;
+document.getElementById('lang-toggle').onclick = () => {
+  const next = lang === 'fr' ? 'en' : 'fr';
+  applyLang(next);
+  if (running) stopBreathing();
+};
+
+applyLang(lang);
+updateUI();
+</script>
+</body>
+</html>

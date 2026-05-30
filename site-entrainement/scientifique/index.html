@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSCAR-S · Oratron Scientifique</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050508; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #4fc3f7, #0288d1); border-radius: 3px; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #050508; color: #e0e0e0;
+  overflow-x: hidden;
+}
+
+/* Canvas BG */
+#particles-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.bg-gradient {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -5%, rgba(79,195,247,.1) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255,107,53,.06) 0%, transparent 60%);
+  z-index: 0; pointer-events: none;
+}
+
+/* Lang toggle */
+.lang-toggle {
+  position: fixed; top: 20px; right: 20px; z-index: 100;
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 3px; cursor: pointer;
+}
+.lang-toggle span {
+  padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600;
+  letter-spacing: .5px; transition: .3s; color: #555;
+}
+.lang-toggle span.active { background: #4fc3f7; color: #fff; }
+
+/* Nav */
+nav {
+  position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 40px;
+  background: rgba(5,5,8,.7); backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid rgba(79,195,247,.08);
+}
+nav .logo { font-weight: 900; font-size: 1.2em; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; }
+nav .logo .icon { width: 10px; height: 10px; background: #4fc3f7; border-radius: 50%; animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(79,195,247,.6); } 50% { box-shadow: 0 0 0 8px rgba(79,195,247,0); } }
+nav .logo span { color: #4fc3f7; }
+nav .logo small { font-weight: 300; font-size: .5em; color: #555; margin-left: 4px; letter-spacing: 2px; text-transform: uppercase; }
+nav .links { display: flex; align-items: center; gap: 6px; }
+nav .links a {
+  color: #777; text-decoration: none; font-size: .78em; padding: 5px 14px;
+  border-radius: 20px; transition: .3s; letter-spacing: .5px;
+}
+nav .links a:hover { color: #4fc3f7; background: rgba(79,195,247,.08); }
+nav .links a.active { color: #4fc3f7; background: rgba(79,195,247,.1); }
+
+/* Hero */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 100px 20px 60px; position: relative; z-index: 1;
+}
+.hero .orb {
+  position: absolute; width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,195,247,.06) 0%, transparent 60%);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  animation: orb-float 8s ease-in-out infinite;
+}
+@keyframes orb-float { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-55%) scale(1.05); } }
+.hero h1 { font-size: clamp(2em, 6vw, 4em); font-weight: 900; letter-spacing: -2px; line-height: 1.1; position: relative; z-index: 1; }
+.hero h1 .gradient { background: linear-gradient(135deg, #fff 0%, #4fc3f7 30%, #ff6b35 70%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero .sub { font-size: .9em; color: #555; margin-top: 14px; letter-spacing: 3px; text-transform: uppercase; font-weight: 300; position: relative; z-index: 1; }
+.hero .tagline { font-size: .85em; color: #666; margin-top: 8px; max-width: 500px; margin-inline: auto; line-height: 1.7; position: relative; z-index: 1; }
+.hero .cta { margin-top: 30px; display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; }
+.hero .cta a {
+  display: inline-block; padding: 12px 30px; border-radius: 50px; text-decoration: none;
+  font-weight: 600; font-size: .82em; letter-spacing: 1px; transition: .4s; text-transform: uppercase;
+}
+.hero .cta .primary { background: linear-gradient(135deg,#4fc3f7,#0288d1); color: #fff; box-shadow: 0 0 30px rgba(79,195,247,.25); }
+.hero .cta .primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 0 60px rgba(79,195,247,.5); }
+.hero .cta .secondary { border: 1px solid rgba(255,255,255,.1); color: #bbb; background: rgba(255,255,255,.03); backdrop-filter: blur(10px); }
+.hero .cta .secondary:hover { border-color: #4fc3f7; color: #4fc3f7; transform: translateY(-2px); }
+
+/* Sections */
+section { position: relative; z-index: 1; padding: 80px 0; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.section-label { text-align: center; font-size: .7em; text-transform: uppercase; letter-spacing: 3px; color: #4fc3f7; font-weight: 600; }
+.section-title { text-align: center; margin-bottom: 10px; }
+.section-title h2 { font-size: clamp(1.6em, 3.5vw, 2.4em); font-weight: 700; letter-spacing: -1px; line-height: 1.2; }
+.section-title h2 span { color: #4fc3f7; }
+.section-title p { color: #666; margin-top: 6px; font-size: .9em; }
+
+/* Method grid */
+.method-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 24px; }
+.method-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 16px; padding: 24px; transition: .4s; position: relative; overflow: hidden;
+}
+.method-card:hover { border-color: rgba(79,195,247,.2); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.3); }
+.method-card .letter {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 12px;
+  background: rgba(79,195,247,.1); color: #4fc3f7;
+  font-weight: 900; font-size: 1.2em; margin-bottom: 12px;
+}
+.method-card .sub { color: #4fc3f7; font-size: .65em; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+.method-card h3 { font-size: 1em; font-weight: 600; margin: 6px 0 8px; }
+.method-card p { color: #888; font-size: .82em; line-height: 1.6; }
+.method-card ul { color: #777; font-size: .78em; line-height: 1.8; padding-left: 16px; margin-top: 6px; }
+.method-card li { margin: 3px 0; }
+
+/* Program grid */
+.prog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 20px; }
+.prog-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04);
+  border-radius: 12px; padding: 14px; text-align: center; transition: .3s;
+}
+.prog-card:hover { border-color: rgba(79,195,247,.12); }
+.prog-card .day { font-size: .65em; color: #4fc3f7; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+.prog-card .obj { font-size: .78em; margin: 6px 0; color: #ccc; }
+.prog-card .exo { font-size: .7em; color: #666; }
+
+/* Feature grid */
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin-top: 24px; }
+.feature-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 14px; padding: 20px; text-align: center; transition: .4s; text-decoration: none; color: inherit;
+}
+.feature-card:hover { border-color: rgba(79,195,247,.2); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+.feature-card .icon { font-size: 2em; margin-bottom: 8px; }
+.feature-card h3 { font-size: .95em; font-weight: 600; }
+.feature-card p { color: #888; font-size: .78em; margin-top: 4px; line-height: 1.6; }
+
+/* Timeline */
+.timeline { position: relative; margin-top: 24px; padding-left: 30px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, #4fc3f7, transparent); }
+.timeline-item { position: relative; margin-bottom: 20px; }
+.timeline-item::before { content: ''; position: absolute; left: -26px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #4fc3f7; border: 2px solid #050508; }
+.timeline-item .week { font-size: .65em; text-transform: uppercase; letter-spacing: 2px; color: #4fc3f7; font-weight: 600; }
+.timeline-item h3 { font-size: .95em; font-weight: 600; margin: 2px 0 4px; }
+.timeline-item p { color: #888; font-size: .8em; line-height: 1.6; }
+
+/* Cards */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 24px; }
+.info-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 14px; padding: 20px; transition: .3s;
+}
+.info-card:hover { border-color: rgba(79,195,247,.12); }
+.info-card h3 { font-size: .95em; font-weight: 600; margin-bottom: 6px; }
+.info-card h3 span { color: #4fc3f7; }
+.info-card p { color: #888; font-size: .8em; line-height: 1.6; }
+.info-card code { color: #4fc3f7; font-size: .85em; background: rgba(79,195,247,.06); padding: 1px 6px; border-radius: 4px; }
+
+/* Quote */
+.quote-section { text-align: center; padding: 50px 0; }
+.quote-section blockquote { font-size: clamp(1.1em, 2.5vw, 1.6em); font-weight: 300; font-style: italic; color: #888; max-width: 650px; margin: 0 auto; line-height: 1.6; }
+.quote-section blockquote::before { content: '"'; color: #4fc3f7; font-size: 1.5em; }
+.quote-section blockquote::after { content: '"'; color: #4fc3f7; font-size: 1.5em; }
+.quote-section cite { display: block; margin-top: 10px; color: #555; font-size: .78em; font-style: normal; }
+
+/* Footer */
+footer { text-align: center; padding: 40px 24px 20px; border-top: 1px solid rgba(255,255,255,.04); color: #444; font-size: .75em; position: relative; z-index: 1; }
+footer .links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+footer a { color: #666; text-decoration: none; transition: .3s; }
+footer a:hover { color: #4fc3f7; }
+
+/* Scroll indicator */
+.scroll-indicator { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; color: #444; font-size: .65em; letter-spacing: 2px; animation: bounce-down 2s infinite; }
+@keyframes bounce-down { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+.scroll-indicator .line { width: 1px; height: 25px; background: linear-gradient(180deg, #4fc3f7, transparent); }
+
+/* Reveal */
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-d1 { transition-delay: .1s; }
+.reveal-d2 { transition-delay: .2s; }
+.reveal-d3 { transition-delay: .3s; }
+
+/* Responsive */
+@media (max-width:700px) {
+  nav { padding: 10px 16px; }
+  nav .links a { font-size: .7em; padding: 4px 8px; }
+  .method-grid { grid-template-columns: 1fr; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .prog-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="particles-canvas"></canvas>
+<div class="bg-gradient"></div>
+
+<div class="lang-toggle" id="lang-toggle">
+  <span class="active" data-lang="fr">FR</span>
+  <span data-lang="en">EN</span>
+</div>
+
+<nav>
+  <div class="logo"><span class="icon"></span>OSCAR<span>.</span><small>Scientifique</small></div>
+  <div class="links">
+    <a href="#method" data-i18n="nav.method">Méthode</a>
+    <a href="#program" data-i18n="nav.program">Programme</a>
+    <a href="#modules" data-i18n="nav.modules">Modules</a>
+    <a href="#outils" data-i18n="nav.tools">Outils</a>
+    <a href="../index.html" data-i18n="nav.back">← Oratron</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="orb"></div>
+  <div class="container">
+    <h1><span class="gradient">OSCAR-S</span></h1>
+    <p class="sub" data-i18n="hero.sub">Méthode de prise de parole pour scientifiques</p>
+    <p class="tagline" data-i18n="hero.tagline">Objectif · Structure · Clarté · Assurance · Réponse aux questions · Style — Un système complet pour maîtriser la communication scientifique.</p>
+    <div class="cta">
+      <a href="#method" class="primary" data-i18n="hero.cta1">Découvrir la méthode</a>
+      <a href="#modules" class="secondary" data-i18n="hero.cta2">Accéder aux modules</a>
+    </div>
+  </div>
+  <div class="scroll-indicator"><span data-i18n="hero.scroll">Défiler</span><div class="line"></div></div>
+</section>
+
+<!-- Quote -->
+<section class="quote-section">
+  <div class="container">
+    <blockquote id="quote-text">Un problème scientifique bien posé est à moitié résolu.</blockquote>
+    <cite id="quote-author">— Henri Poincaré</cite>
+  </div>
+</section>
+
+<!-- Method -->
+<section id="method">
+  <div class="container">
+    <div class="section-label reveal">OSCAR-S</div>
+    <div class="section-title reveal"><h2>Les <span>6 piliers</span> de la communication scientifique</h2></div>
+    <div class="method-grid">
+      <div class="method-card reveal">
+        <div class="letter">O</div>
+        <div class="sub" data-i18n="m1.sub">Objectif</div>
+        <h3 data-i18n="m1.title">Définir le message</h3>
+        <p data-i18n="m1.desc">Formuler l'objectif de l'intervention en une phrase. 6 types : informer, convaincre, défendre, vulgariser, démontrer, valider.</p>
+        <ul data-i18n="m1.list">
+          <li>« Après cette intervention, mon public saura / pensera / fera quoi ? »</li>
+          <li>Une phrase, pas plus.</li>
+        </ul>
+      </div>
+      <div class="method-card reveal reveal-d2">
+        <div class="letter">S</div>
+        <div class="sub" data-i18n="m2.sub">Structure</div>
+        <h3 data-i18n="m2.title">Architecture scientifique</h3>
+        <p data-i18n="m2.desc">Structure complète en 8 étapes : Contexte → Problème → Hypothèse → Méthode → Résultats → Interprétation → Limites → Suite. Versions compressées pour 2, 5, 10 ou 20 minutes.</p>
+        <ul data-i18n="m2.list">
+          <li>Chaque résultat = Résultat → Sens → Impact</li>
+          <li>Une idée forte par diapositive</li>
+        </ul>
+      </div>
+      <div class="method-card reveal reveal-d3">
+        <div class="letter">C</div>
+        <div class="sub" data-i18n="m3.sub">Clarté</div>
+        <h3 data-i18n="m3.title">Rendre lisible le complexe</h3>
+        <p data-i18n="m3.desc">7 techniques : analogie systématique, règle du « donc », règle du cadre, suppression du bruit lexical, phrases courtes, RSI, règle du tiers.</p>
+        <ul data-i18n="m3.list">
+          <li>15 mots max en vulgarisation</li>
+          <li>3 termes techniques non définis max</li>
+        </ul>
+      </div>
+      <div class="method-card reveal">
+        <div class="letter">A</div>
+        <div class="sub" data-i18n="m4.sub">Assurance</div>
+        <h3 data-i18n="m4.title">Présence & maîtrise</h3>
+        <p data-i18n="m4.desc">Respiration carrée, débit 140-160 mots/min, regard 3 points, pauses stratégiques, posture ouverte, protocole 90 secondes avant de monter.</p>
+        <ul data-i18n="m4.list">
+          <li>Débit calibré au métronome</li>
+          <li>Pause = outil, pas un vide</li>
+        </ul>
+      </div>
+      <div class="method-card reveal reveal-d2">
+        <div class="letter">R</div>
+        <div class="sub" data-i18n="m5.sub">Réponse</div>
+        <h3 data-i18n="m5.title">Gestion des questions</h3>
+        <p data-i18n="m5.desc">Méthode PRRLO : Paraphrase → Remercier → Répondre → Limiter → Ouvrir. Adapté aux questions floues, agressives, pièges, hors-sujet, d'expert.</p>
+        <ul data-i18n="m5.list">
+          <li>« Je n'ai pas la réponse » n'est pas un échec</li>
+          <li>Reformuler = reprendre le contrôle</li>
+        </ul>
+      </div>
+      <div class="method-card reveal reveal-d3">
+        <div class="letter">S</div>
+        <div class="sub" data-i18n="m6.sub">Style</div>
+        <h3 data-i18n="m6.title">Style scientifique</h3>
+        <p data-i18n="m6.desc">Clair, calme, rigoureux, confiant, accessible, pédagogique. Ni théâtral, ni monotone. Sans tics de langage, sans jargon inutile.</p>
+        <ul data-i18n="m6.list">
+          <li>Définition avant utilisation</li>
+          <li>Phrase-marteau : ouverture, transition, conclusion</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Weekly timeline -->
+<section style="padding:50px 0">
+  <div class="container">
+    <div class="section-label reveal">Programme</div>
+    <div class="section-title reveal"><h2>30 jours pour <span>maîtriser</span> OSCAR-S</h2><p data-i18n="prog.sub">15-20 min par jour. Quatre semaines progressives.</p></div>
+    <div class="timeline">
+      <div class="timeline-item reveal">
+        <div class="week" data-i18n="prog.w1">Semaine 1</div>
+        <h3 data-i18n="prog.w1t">Fondamentaux & Respiration</h3>
+        <p data-i18n="prog.w1d">Évaluation initiale, respiration carrée, posture, phrase unique, Résultat→Sens→Impact, 3 niveaux d'explication, bilan.</p>
+      </div>
+      <div class="timeline-item reveal reveal-d2">
+        <div class="week" data-i18n="prog.w2">Semaine 2</div>
+        <h3 data-i18n="prog.w2t">Structure & Clarté</h3>
+        <p data-i18n="prog.w2d">Structure OSCAR-S complète, pitch 2 min / 5 min / 10 min, diapositive unique, analogies, phrases-marteau.</p>
+      </div>
+      <div class="timeline-item reveal reveal-d3">
+        <div class="week" data-i18n="prog.w3">Semaine 3</div>
+        <h3 data-i18n="prog.w3t">Questions & Défense</h3>
+        <p data-i18n="prog.w3d">PRRLO, questions typiques, « je ne sais pas », contradiction, simulation jury, questions hors-sujet.</p>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="week" data-i18n="prog.w4">Semaine 4</div>
+        <h3 data-i18n="prog.w4t">Synthèse & Simulation</h3>
+        <p data-i18n="prog.w4d">Présentation complète, auto-analyse, conférence simulée, soutenance simulée, vulgarisation, évaluation finale.</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:24px">
+      <a href="programme-30-jours.html" class="hero cta"><span class="primary" data-i18n="prog.cta">Voir le programme complet →</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Modules -->
+<section id="modules" style="padding:50px 0">
+  <div class="container">
+    <div class="section-label reveal">Modules</div>
+    <div class="section-title reveal"><h2>Boîte à outils <span>scientifique</span></h2></div>
+    <div class="feature-grid">
+      <a href="programme-30-jours.html" class="feature-card reveal">
+        <div class="icon">📅</div>
+        <h3 data-i18n="mod1.t">Programme 30 jours</h3>
+        <p data-i18n="mod1.d">Plan complet jour par jour avec objectifs, exercices, durées, critères et variantes avancées.</p>
+      </a>
+      <a href="exercices-scientifiques.html" class="feature-card reveal reveal-d2">
+        <div class="icon">🔬</div>
+        <h3 data-i18n="mod2.t">Exercices scientifiques</h3>
+        <p data-i18n="mod2.d">8 exercices adaptés à ton domaine : jet EM, FWHM, Zmax, S11, guide d'onde, anomalies, vulgarisation.</p>
+      </a>
+      <a href="generateur-questions.html" class="feature-card reveal reveal-d3">
+        <div class="icon">🎯</div>
+        <h3 data-i18n="mod3.t">Générateur de questions</h3>
+        <p data-i18n="mod3.d">50+ questions types pour soutenance, conférence, jury et comité de thèse. Avec PRRLO intégré.</p>
+      </a>
+      <a href="grille-evaluation.html" class="feature-card reveal">
+        <div class="icon">📊</div>
+        <h3 data-i18n="mod4.t">Grille d'évaluation</h3>
+        <p data-i18n="mod4.d">12 critères notés sur 5. Score total /145. Tableau de suivi hebdomadaire des indicateurs.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Quick methods -->
+<section id="outils" style="padding:50px 0">
+  <div class="container">
+    <div class="section-label reveal">Méthodes clés</div>
+    <div class="section-title reveal"><h2>5 méthodes <span>personnelles</span></h2></div>
+    <div class="card-grid">
+      <div class="info-card reveal">
+        <h3>① <span>RSI</span> — Résultat → Sens → Impact</h3>
+        <p>Chaque résultat présenté doit passer ce filtre : « On observe que… » → « Cela signifie que… » → « C'est important parce que… ».</p>
+      </div>
+      <div class="info-card reveal reveal-d2">
+        <h3>② <span>3 niveaux</span> d'explication</h3>
+        <p>Un même concept expliqué en <strong>30s</strong> (non-spécialiste), <strong>2 min</strong> (ingénieur), <strong>5 min</strong> (expert). Zéro jargon au niveau 1.</p>
+      </div>
+      <div class="info-card reveal reveal-d3">
+        <h3>③ <span>Phrase-marteau</span></h3>
+        <p>3 phrases préparées : ouverture, transition, conclusion. Apprises par cœur. Exemple : « Je suis ici pour vous montrer que… »</p>
+      </div>
+      <div class="info-card reveal">
+        <h3>④ <span>Pont technique-public</span></h3>
+        <p>Pour chaque concept : terme technique → explication simple → image mentale → utilité concrète. Exemple : FWHM = résolution = largeur d'un stylo.</p>
+      </div>
+      <div class="info-card reveal reveal-d2">
+        <h3>⑤ <span>PRRLO</span> — Défense calme</h3>
+        <p>Paraphrase → Remercier → Répondre → Limiter → Ouvrir. 5 étapes pour toute question difficile. Pause 1s avant de répondre.</p>
+      </div>
+      <div class="info-card reveal reveal-d3">
+        <h3>📐 <span>Structures</span> par durée</h3>
+        <p><strong>2 min</strong> : Problème → Résultat → Impact<br><strong>5 min</strong> : + Méthode (1 phrase)<br><strong>10 min</strong> : + Contexte + Limites<br><strong>20 min</strong> : Structure complète 8 étapes</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="links">
+    <a href="../index.html" data-i18n="footer.back">← Retour à Oratron</a>
+    <a href="#method" data-i18n="footer.method">Méthode</a>
+    <a href="#program" data-i18n="footer.program">Programme</a>
+  </div>
+  <p data-i18n="footer.tagline">OSCAR-S — Méthode de prise de parole pour scientifiques · Fait avec rigueur</p>
+</footer>
+
+<script>
+const L = {
+  fr: {
+    'nav.method': 'Méthode', 'nav.program': 'Programme', 'nav.modules': 'Modules', 'nav.tools': 'Outils', 'nav.back': '← Oratron',
+    'hero.sub': 'Méthode de prise de parole pour scientifiques',
+    'hero.tagline': 'Objectif · Structure · Clarté · Assurance · Réponse aux questions · Style — Un système complet pour maîtriser la communication scientifique.',
+    'hero.cta1': 'Découvrir la méthode', 'hero.cta2': 'Accéder aux modules', 'hero.scroll': 'Défiler',
+    'm1.sub': 'Objectif', 'm1.title': 'Définir le message', 'm1.desc': 'Formuler l\'objectif de l\'intervention en une phrase. 6 types : informer, convaincre, défendre, vulgariser, démontrer, valider.', 'm1.list': '<li>« Après cette intervention, mon public saura / pensera / fera quoi ? »</li><li>Une phrase, pas plus.</li>',
+    'm2.sub': 'Structure', 'm2.title': 'Architecture scientifique', 'm2.desc': 'Structure complète en 8 étapes : Contexte → Problème → Hypothèse → Méthode → Résultats → Interprétation → Limites → Suite. Versions compressées pour 2, 5, 10 ou 20 minutes.', 'm2.list': '<li>Chaque résultat = Résultat → Sens → Impact</li><li>Une idée forte par diapositive</li>',
+    'm3.sub': 'Clarté', 'm3.title': 'Rendre lisible le complexe', 'm3.desc': '7 techniques : analogie systématique, règle du « donc », règle du cadre, suppression du bruit lexical, phrases courtes, RSI, règle du tiers.', 'm3.list': '<li>15 mots max en vulgarisation</li><li>3 termes techniques non définis max</li>',
+    'm4.sub': 'Assurance', 'm4.title': 'Présence & maîtrise', 'm4.desc': 'Respiration carrée, débit 140-160 mots/min, regard 3 points, pauses stratégiques, posture ouverte, protocole 90 secondes avant de monter.', 'm4.list': '<li>Débit calibré au métronome</li><li>Pause = outil, pas un vide</li>',
+    'm5.sub': 'Réponse', 'm5.title': 'Gestion des questions', 'm5.desc': 'Méthode PRRLO : Paraphrase → Remercier → Répondre → Limiter → Ouvrir. Adapté aux questions floues, agressives, pièges, hors-sujet, d\'expert.', 'm5.list': '<li>« Je n\'ai pas la réponse » n\'est pas un échec</li><li>Reformuler = reprendre le contrôle</li>',
+    'm6.sub': 'Style', 'm6.title': 'Style scientifique', 'm6.desc': 'Clair, calme, rigoureux, confiant, accessible, pédagogique. Ni théâtral, ni monotone. Sans tics de langage, sans jargon inutile.', 'm6.list': '<li>Définition avant utilisation</li><li>Phrase-marteau : ouverture, transition, conclusion</li>',
+    'prog.sub': '15-20 min par jour. Quatre semaines progressives.',
+    'prog.w1': 'Semaine 1', 'prog.w1t': 'Fondamentaux & Respiration', 'prog.w1d': 'Évaluation initiale, respiration carrée, posture, phrase unique, Résultat→Sens→Impact, 3 niveaux d\'explication, bilan.',
+    'prog.w2': 'Semaine 2', 'prog.w2t': 'Structure & Clarté', 'prog.w2d': 'Structure OSCAR-S complète, pitch 2 min / 5 min / 10 min, diapositive unique, analogies, phrases-marteau.',
+    'prog.w3': 'Semaine 3', 'prog.w3t': 'Questions & Défense', 'prog.w3d': 'PRRLO, questions typiques, « je ne sais pas », contradiction, simulation jury, questions hors-sujet.',
+    'prog.w4': 'Semaine 4', 'prog.w4t': 'Synthèse & Simulation', 'prog.w4d': 'Présentation complète, auto-analyse, conférence simulée, soutenance simulée, vulgarisation, évaluation finale.',
+    'prog.cta': 'Voir le programme complet →',
+    'mod1.t': 'Programme 30 jours', 'mod1.d': 'Plan complet jour par jour avec objectifs, exercices, durées, critères et variantes avancées.',
+    'mod2.t': 'Exercices scientifiques', 'mod2.d': '8 exercices adaptés à ton domaine : jet EM, FWHM, Zmax, S11, guide d\'onde, anomalies, vulgarisation.',
+    'mod3.t': 'Générateur de questions', 'mod3.d': '50+ questions types pour soutenance, conférence, jury et comité de thèse. Avec PRRLO intégré.',
+    'mod4.t': "Grille d'évaluation", 'mod4.d': '12 critères notés sur 5. Score total /145. Tableau de suivi hebdomadaire des indicateurs.',
+    'footer.back': '← Retour à Oratron', 'footer.method': 'Méthode', 'footer.program': 'Programme', 'footer.tagline': 'OSCAR-S — Méthode de prise de parole pour scientifiques · Fait avec rigueur',
+  },
+  en: {
+    'nav.method': 'Method', 'nav.program': 'Program', 'nav.modules': 'Modules', 'nav.tools': 'Tools', 'nav.back': '← Oratron',
+    'hero.sub': 'Public speaking method for scientists',
+    'hero.tagline': 'Objective · Structure · Clarity · Assurance · Response · Style — A complete system to master scientific communication.',
+    'hero.cta1': 'Discover the Method', 'hero.cta2': 'Access Modules', 'hero.scroll': 'Scroll',
+    'm1.sub': 'Objective', 'm1.title': 'Define the Message', 'm1.desc': 'Formulate the intervention goal in one sentence. 6 types: inform, convince, defend, popularize, demonstrate, validate.', 'm1.list': '<li>"After this talk, my audience will know / think / do what?"</li><li>One sentence, no more.</li>',
+    'm2.sub': 'Structure', 'm2.title': 'Scientific Architecture', 'm2.desc': 'Complete 8-step structure: Context → Problem → Hypothesis → Method → Results → Interpretation → Limits → Next. Compressed versions for 2, 5, 10 or 20 minutes.', 'm2.list': '<li>Each result = Result → Meaning → Impact</li><li>One strong idea per slide</li>',
+    'm3.sub': 'Clarity', 'm3.title': 'Make Complexity Readable', 'm3.desc': '7 techniques: systematic analogy, "therefore" rule, framing, lexical noise removal, short sentences, RSI, rule of thirds.', 'm3.list': '<li>Max 15 words for popularization</li><li>Max 3 undefined technical terms</li>',
+    'm4.sub': 'Assurance', 'm4.title': 'Presence & Control', 'm4.desc': 'Box breathing, 140-160 words/min pace, 3-point gaze, strategic pauses, open posture, 90-second pre-talk protocol.', 'm4.list': '<li>Calibrated pace with metronome</li><li>Pause = tool, not a void</li>',
+    'm5.sub': 'Response', 'm5.title': 'Handling Questions', 'm5.desc': 'PRRLO method: Paraphrase → Thank → Respond → Limit → Open. Adapted to vague, aggressive, tricky, off-topic, and expert questions.', 'm5.list': '<li>"I don\'t know" is not a failure</li><li>Paraphrasing = regaining control</li>',
+    'm6.sub': 'Style', 'm6.title': 'Scientific Style', 'm6.desc': 'Clear, calm, rigorous, confident, accessible, pedagogical. Neither theatrical nor monotonous. No filler words, no unnecessary jargon.', 'm6.list': '<li>Define before use</li><li>Hammer sentence: opening, transition, conclusion</li>',
+    'prog.sub': '15-20 min per day. Four progressive weeks.',
+    'prog.w1': 'Week 1', 'prog.w1t': 'Fundamentals & Breathing', 'prog.w1d': 'Initial assessment, box breathing, posture, single-sentence pitch, Result→Meaning→Impact, 3 levels of explanation, review.',
+    'prog.w2': 'Week 2', 'prog.w2t': 'Structure & Clarity', 'prog.w2d': 'Complete OSCAR-S structure, 2min/5min/10min pitch, single slide, analogies, hammer sentences.',
+    'prog.w3': 'Week 3', 'prog.w3t': 'Questions & Defense', 'prog.w3d': 'PRRLO, typical questions, "I don\'t know", contradiction, mock committee, off-topic questions.',
+    'prog.w4': 'Week 4', 'prog.w4t': 'Synthesis & Simulation', 'prog.w4d': 'Full presentation, self-analysis, mock conference, mock defense, popularization, final evaluation.',
+    'prog.cta': 'View Full Program →',
+    'mod1.t': '30-Day Program', 'mod1.d': 'Complete day-by-day plan with objectives, exercises, durations, criteria, and advanced variants.',
+    'mod2.t': 'Scientific Exercises', 'mod2.d': '8 exercises adapted to your field: EM jet, FWHM, Zmax, S11, waveguide, anomalies, popularization.',
+    'mod3.t': 'Question Generator', 'mod3.d': '50+ typical questions for defense, conference, committee. With integrated PRRLO.',
+    'mod4.t': 'Evaluation Grid', 'mod4.d': '12 criteria scored out of 5. Total score /145. Weekly indicator tracking table.',
+    'footer.back': '← Back to Oratron', 'footer.method': 'Method', 'footer.program': 'Program', 'footer.tagline': 'OSCAR-S — Public speaking method for scientists · Made with rigor',
+  }
+};
+const QUOTES_FR = [
+  { t: 'Un problème scientifique bien posé est à moitié résolu.', a: 'Henri Poincaré' },
+  { t: 'Ce qui se conçoit bien s\'énonce clairement.', a: 'Nicolas Boileau' },
+  { t: 'Si vous ne pouvez pas l\'expliquer simplement, vous ne l\'avez pas compris assez bien.', a: 'Albert Einstein' },
+  { t: 'La science n\'est que perfection de la pensée.', a: 'Claude Bernard' },
+  { t: 'L\'important n\'est pas de convaincre, mais de donner à réflaire.', a: 'Bernard Werber' },
+];
+const QUOTES_EN = [
+  { t: 'A problem well stated is a problem half solved.', a: 'Henri Poincaré' },
+  { t: 'What is well conceived is clearly said.', a: 'Nicolas Boileau' },
+  { t: 'If you can\'t explain it simply, you don\'t understand it well enough.', a: 'Albert Einstein' },
+  { t: 'Science is nothing but perfected thought.', a: 'Claude Bernard' },
+  { t: 'The important thing is not to convince, but to give pause for thought.', a: 'Bernard Werber' },
+];
+
+let lang = localStorage.getItem('oratron-lang') || 'fr';
+let qi = 0;
+
+function applyLang(l) {
+  lang = l; localStorage.setItem('oratron-lang', l);
+  document.querySelectorAll('.lang-toggle span').forEach(s => s.classList.toggle('active', s.dataset.lang === l));
+  const dict = L[l];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (dict[k]) {
+      if (k.endsWith('.list') || k === 'm1.list' || k === 'm2.list' || k === 'm3.list' || k === 'm4.list' || k === 'm5.list' || k === 'm6.list') el.innerHTML = dict[k];
+      else el.textContent = dict[k];
+    }
+  });
+  const qs = l === 'fr' ? QUOTES_FR : QUOTES_EN;
+  document.getElementById('quote-text').textContent = qs[qi]?.t || qs[0].t;
+  document.getElementById('quote-author').textContent = '— ' + (qs[qi]?.a || qs[0].a);
+}
+setInterval(() => {
+  const qs = lang === 'fr' ? QUOTES_FR : QUOTES_EN;
+  qi = (qi + 1) % qs.length;
+  document.getElementById('quote-text').style.opacity = '0';
+  document.getElementById('quote-author').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('quote-text').textContent = qs[qi].t;
+    document.getElementById('quote-author').textContent = '— ' + qs[qi].a;
+    document.getElementById('quote-text').style.opacity = '1';
+    document.getElementById('quote-author').style.opacity = '1';
+  }, 400);
+}, 8000);
+
+document.getElementById('lang-toggle').onclick = () => applyLang(lang === 'fr' ? 'en' : 'fr');
+
+// Particles
+const canvas = document.getElementById('particles-canvas'), ctx = canvas.getContext('2d');
+let pw, ph;
+function resize() { pw = canvas.width = window.innerWidth; ph = canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+const pts = Array.from({length:70}, () => ({ x: Math.random()*pw, y: Math.random()*ph, vx: (Math.random()-.5)*.25, vy: (Math.random()-.5)*.25, r: Math.random()*2+.5 }));
+function draw() {
+  ctx.clearRect(0,0,pw,ph);
+  pts.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x<0||p.x>pw) p.vx*=-1; if (p.y<0||p.y>ph) p.vy*=-1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle = `hsla(200,70%,60%,${.1+p.r/10})`; ctx.fill();
+  });
+  for (let i=0;i<pts.length;i++) for (let j=i+1;j<pts.length;j++) {
+    const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.hypot(dx,dy);
+    if (d<150) { ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y); ctx.strokeStyle=`hsla(200,70%,60%,${.03*(1-d/150)})`; ctx.stroke(); }
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+// Reveal observer
+const ro = new IntersectionObserver(e => { e.forEach(en => { if (en.isIntersecting) { en.target.classList.add('visible'); ro.unobserve(en.target); } }); }, { threshold: .1 });
+document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
+
+applyLang(lang);
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programme 30 jours · OSCAR-S</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #050508; color: #e0e0e0; overflow-x: hidden; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050508; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #4fc3f7, #0288d1); border-radius: 3px; }
+.container { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+header { padding: 30px 20px 10px; border-bottom: 1px solid rgba(79,195,247,.08); margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-size: 1.3em; font-weight: 900; letter-spacing: -1px; }
+header h1 span { color: #4fc3f7; }
+header a { color: #4fc3f7; text-decoration: none; font-size: .8em; }
+header a:hover { text-decoration: underline; }
+header .complete { color: #555; font-size: .8em; }
+header .complete strong { color: #4fc3f7; }
+
+.lang-toggle { display: flex; gap: 4px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 3px; cursor: pointer; }
+.lang-toggle span { padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600; letter-spacing: .5px; transition: .3s; color: #555; }
+.lang-toggle span.active { background: #4fc3f7; color: #fff; }
+
+.week { margin-bottom: 30px; }
+.week h2 { font-size: 1.1em; font-weight: 700; color: #4fc3f7; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+.week h2 small { font-size: .55em; color: #555; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; }
+.week p { color: #777; font-size: .82em; margin-bottom: 12px; }
+.day-grid { display: grid; gap: 8px; }
+.day-card {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04); border-radius: 12px; padding: 14px 16px;
+  display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; transition: .3s;
+}
+.day-card:hover { border-color: rgba(79,195,247,.12); background: rgba(79,195,247,.02); }
+.day-card .num { font-size: .8em; font-weight: 700; color: #4fc3f7; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(79,195,247,.08); }
+.day-card .content { min-width: 0; }
+.day-card .content .obj { font-size: .85em; font-weight: 600; }
+.day-card .content .exo { font-size: .75em; color: #888; margin-top: 2px; line-height: 1.5; }
+.day-card .content .exo .eval { color: #555; font-style: italic; }
+.day-card .dur { font-size: .7em; color: #555; letter-spacing: 1px; white-space: nowrap; }
+.day-card.done { border-color: rgba(79,195,247,.15); }
+.day-card.done .num { background: rgba(79,195,247,.2); }
+.day-card.done .content .obj::after { content: ' ✓'; color: #4fc3f7; }
+
+footer { text-align: center; padding: 30px 20px; color: #444; font-size: .72em; border-top: 1px solid rgba(255,255,255,.03); margin-top: 30px; }
+footer a { color: #4fc3f7; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>📅 <span>30 jours</span> — OSCAR-S</h1>
+      <div class="complete" data-i18n="progress"><span id="done-count">0</span>/30 jours complétés</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" data-i18n="back">← Retour</a>
+      <div class="lang-toggle" id="lang-toggle">
+        <span class="active" data-lang="fr">FR</span>
+        <span data-lang="en">EN</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="program"></div>
+
+  <footer>
+    <p data-i18n="footer">OSCAR-S — <a href="../index.html">Oratron</a> · Programme 30 jours pour scientifiques</p>
+  </footer>
+</div>
+
+<script>
+const L = {
+  fr: {
+    back: '← Retour', progress: '{n}/30 jours complétés',
+    w1: 'Semaine 1 — Fondamentaux & Respiration', w1d: 'Évaluation, respiration carrée, posture, RSI, 3 niveaux.',
+    w2: 'Semaine 2 — Structure & Clarté', w2d: 'OSCAR-S, pitch 2/5/10 min, analogies, phrase-marteau.',
+    w3: 'Semaine 3 — Questions & Défense', w3d: 'PRRLO, questions typiques, contradiction, simulation jury.',
+    w4: 'Semaine 4 — Synthèse & Simulation', w4d: 'Présentation complète, conférence, soutenance, évaluation finale.',
+    footer: 'OSCAR-S — Oratron · Programme 30 jours pour scientifiques',
+  },
+  en: {
+    back: '← Back', progress: '{n}/30 days completed',
+    w1: 'Week 1 — Fundamentals & Breathing', w1d: 'Assessment, box breathing, posture, RSI, 3 levels.',
+    w2: 'Week 2 — Structure & Clarity', w2d: 'OSCAR-S, 2/5/10min pitch, analogies, hammer sentence.',
+    w3: 'Week 3 — Questions & Defense', w3d: 'PRRLO, typical questions, contradiction, mock committee.',
+    w4: 'Week 4 — Synthesis & Simulation', w4d: 'Full presentation, conference, defense, final evaluation.',
+    footer: 'OSCAR-S — Oratron · 30-day program for scientists',
+  }
+};
+
+const DAYS = [
+  { w: 1, obj: 'Évaluation initiale', exo: 'Enregistre-toi 2 min sur "ce sur quoi tu travailles". Sans préparation. Compte tes "euh".', dur: '15 min', eval: 'Baseline : "euh"/min, durée, clarté' },
+  { w: 1, obj: 'Respiration carrée', exo: '6 cycles 4-4-4-4. Puis 1 phrase longue sur expiration : "Mon sujet est X".', dur: '15 min', eval: 'La phrase tient sur une expiration ?' },
+  { w: 1, obj: 'Posture + ancrage', exo: 'Debout, pieds écartés, mains visibles. Récite un résultat scientifique face caméra.', dur: '15 min', eval: 'Tu restes immobile du buste ? Tu regardes la caméra ?' },
+  { w: 1, obj: 'Phrase unique (N1)', exo: 'Explique ton sujet en 30s, zéro mot technique. Teste sur un non-scientifique.', dur: '15 min', eval: 'L\'autre comprend l\'idée ?' },
+  { w: 1, obj: 'Résultat → Sens → Impact', exo: 'Prends 1 résultat de tes travaux. Applique RSI : "On observe… Cela signifie… C\'est important parce que…".', dur: '15 min', eval: 'Les 3 parties sont-elles distinctes ?' },
+  { w: 1, obj: '3 niveaux d\'explication', exo: 'Explique ton concept : N1 30s, N2 2min, N3 5min. Chronomètre chaque version.', dur: '20 min', eval: 'Respectes-tu les durées cibles ?' },
+  { w: 1, obj: 'Bilan S1', exo: 'Refais l\'exercice J1. Compare "euh"/min, durée, clarté.', dur: '15 min', eval: 'Progression sur la semaine ?' },
+  { w: 2, obj: 'Structure OSCAR-S', exo: 'Écris un plan complet 20 min : Contexte → Problème → Hypothèse → Méthode → 3 résultats → Interprétation → Limites → Suite.', dur: '15 min', eval: 'Chaque section tient en 1-2 phrases ?' },
+  { w: 2, obj: 'Pitch 2 min', exo: 'Même sujet version 2 min : Problème → Résultat clé → Impact → Phrase choc.', dur: '15 min', eval: 'Tu tiens en 2 min ? Tu vas à l\'essentiel ?' },
+  { w: 2, obj: 'Pitch 5 min', exo: 'Même sujet version 5 min. Ajoute méthode (1 phrase) et interprétation.', dur: '15 min', eval: 'Proportion correcte ? Pas trop de méthode ?' },
+  { w: 2, obj: 'Diapositive unique', exo: 'Explique 1 slide de résultats en 3 min sans la lire.', dur: '15 min', eval: 'Tu parles, pas le texte. Regard public.' },
+  { w: 2, obj: 'Analogies', exo: 'Pour 3 concepts techniques, trouve 3 analogies. Dis-les à voix haute.', dur: '15 min', eval: 'L\'analogie est-elle exacte ? Compréhensible ?' },
+  { w: 2, obj: 'Phrase-marteau', exo: 'Écris et apprends 3 phrases : ouverture, transition, conclusion. Chronomètre.', dur: '15 min', eval: 'Sont-elles mémorables ?' },
+  { w: 2, obj: 'Bilan S2', exo: 'Refais pitch 2 min + 5 min devant caméra. Compare à J9-J10.', dur: '15 min', eval: 'Plus clair ? Plus structuré ?' },
+  { w: 3, obj: 'PRRLO', exo: 'Un ami pose 5 questions. Tu réponds avec PRRLO : Paraphrase → Remercier → Répondre → Limiter → Ouvrir.', dur: '15 min', eval: 'Tu fais les 5 étapes ?' },
+  { w: 3, obj: 'Questions typiques', exo: 'Prépare les réponses à : "Application ?", "Limite ?", "Nouveauté ?". <1 min chacune.', dur: '15 min', eval: 'Concises ? Convaincantes ?' },
+  { w: 3, obj: 'Je ne sais pas', exo: 'Réponds à 3 questions auxquelles tu n\'as pas la réponse. Utilise PRRLO sans inventer.', dur: '15 min', eval: 'Tu gardes ta crédibilité ?' },
+  { w: 3, obj: 'Contradiction', exo: 'On te dit "votre résultat est contredit par X". Reformule, montre tes conditions, ne nie pas.', dur: '15 min', eval: 'Tu restes calme ? Tu argumentes ?' },
+  { w: 3, obj: 'Simulation jury', exo: 'Quelqu\'un lit 10 questions QCM. Tu réponds en temps réel. Temps max 30s/réponse.', dur: '15 min', eval: 'Utilises-tu PRRLO ?' },
+  { w: 3, obj: 'Hors-sujet', exo: 'On te pose 5 questions hors-sujet. Tu recentres poliment sans bloquer.', dur: '15 min', eval: 'Tu reportes sans être brusque ?' },
+  { w: 3, obj: 'Bilan S3', exo: 'Refais J15. Compare temps de réponse et qualité PRRLO.', dur: '15 min', eval: 'Plus rapide ? Plus structuré ?' },
+  { w: 4, obj: 'Présentation complète', exo: '10 min sur ton sujet avec slides. Structure OSCAR-S compressée.', dur: '20 min', eval: 'Tu finis dans le temps ?' },
+  { w: 4, obj: 'Auto-analyse', exo: 'Regarde ton enregistrement J22. Note chaque critère de la grille.', dur: '20 min', eval: 'Identifie 2 points d\'amélioration.' },
+  { w: 4, obj: 'Conférence simulée', exo: '15 min devant 2-3 personnes. Structure complète + questions.', dur: '20 min', eval: 'Tu gères le temps et les questions ?' },
+  { w: 4, obj: 'Répétition conférence', exo: 'Refais J24 avec les corrections des 2 points faibles.', dur: '20 min', eval: 'Tu as progressé sur ces points ?' },
+  { w: 4, obj: 'Soutenance simulée', exo: '25 min : 15 min exposé + 10 min questions. Jury de 3 personnes.', dur: '25 min', eval: 'Tu passes le cap des questions ?' },
+  { w: 4, obj: 'Vulgarisation ultime', exo: 'Explique ton sujet à un lycéen en 3 min. Zéro jargon. Une image forte.', dur: '15 min', eval: 'Le lycéen peut reformuler ?' },
+  { w: 4, obj: 'Évaluation finale', exo: 'Refais J1 + J22. Compare tout : "euh"/min, durée, clarté, structure.', dur: '25 min', eval: 'Score grille > 90 ?' },
+  { w: 4, obj: 'Points faibles', exo: 'Travaille tes 2 points les plus bas de la grille avec des exercices ciblés.', dur: '20 min', eval: 'As-tu progressé sur ces points ?' },
+  { w: 4, obj: 'Plan de suite', exo: 'Écris ton plan pour les 30 prochains jours. Objectifs + exercices + fréquence.', dur: '15 min', eval: 'Plan réaliste, mesurable, daté.' },
+];
+
+const WEEKS = [
+  { n: 1, labelKey: 'w1', descKey: 'w1d' },
+  { n: 2, labelKey: 'w2', descKey: 'w2d' },
+  { n: 3, labelKey: 'w3', descKey: 'w3d' },
+  { n: 4, labelKey: 'w4', descKey: 'w4d' },
+];
+
+let lang = localStorage.getItem('oratron-lang') || 'fr';
+
+function render() {
+  const done = JSON.parse(localStorage.getItem('oscar-progress') || '[]');
+  document.getElementById('done-count').textContent = done.length;
+
+  const d = L[lang];
+  document.querySelector('[data-i18n=progress]').textContent = d.progress.replace('{n}', done.length);
+
+  let html = '';
+  WEEKS.forEach(wk => {
+    const days = DAYS.filter(d => d.w === wk.n);
+    html += `<div class="week"><h2>${d[wk.labelKey]} <small>${d[wk.descKey]}</small></h2>`;
+    html += `<div class="day-grid">`;
+    days.forEach((day, i) => {
+      const idx = DAYS.indexOf(day);
+      const isDone = done.includes(idx);
+      html += `<div class="day-card${isDone ? ' done' : ''}" onclick="toggleDay(${idx})">
+        <div class="num">${idx+1}</div>
+        <div class="content">
+          <div class="obj">${day.obj}</div>
+          <div class="exo">${day.exo} <span class="eval">— ${day.eval}</span></div>
+        </div>
+        <div class="dur">${day.dur}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  document.getElementById('program').innerHTML = html;
+}
+
+function toggleDay(idx) {
+  const done = JSON.parse(localStorage.getItem('oscar-progress') || '[]');
+  const i = done.indexOf(idx);
+  if (i > -1) done.splice(i, 1);
+  else done.push(idx);
+  localStorage.setItem('oscar-progress', JSON.stringify(done));
+  render();
+}
+
+document.getElementById('lang-toggle').onclick = () => {
+  lang = lang === 'fr' ? 'en' : 'fr';
+  localStorage.setItem('oratron-lang', lang);
+  document.querySelectorAll('.lang-toggle span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+  render();
+};
+
+render();
+</script>
+</body>
+</html>

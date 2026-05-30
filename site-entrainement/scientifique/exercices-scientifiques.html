@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exercices scientifiques · OSCAR-S</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #050508; color: #e0e0e0; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050508; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #4fc3f7, #0288d1); border-radius: 3px; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+
+header { padding: 30px 20px 10px; border-bottom: 1px solid rgba(79,195,247,.08); margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-size: 1.3em; font-weight: 900; }
+header h1 span { color: #4fc3f7; }
+header a { color: #4fc3f7; text-decoration: none; font-size: .8em; }
+header a:hover { text-decoration: underline; }
+
+.lang-toggle { display: flex; gap: 4px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 3px; cursor: pointer; }
+.lang-toggle span { padding: 3px 10px; border-radius: 14px; font-size: .72em; font-weight: 600; letter-spacing: .5px; transition: .3s; color: #555; }
+.lang-toggle span.active { background: #4fc3f7; color: #fff; }
+
+.exo { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 14px; padding: 20px; margin-bottom: 16px; transition: .3s; }
+.exo:hover { border-color: rgba(79,195,247,.12); }
+.exo .num { color: #4fc3f7; font-weight: 700; font-size: .7em; text-transform: uppercase; letter-spacing: 2px; }
+.exo h3 { font-size: 1em; font-weight: 600; margin: 4px 0 6px; }
+.exo h3 span { color: #4fc3f7; }
+.exo .meta { color: #666; font-size: .78em; margin-bottom: 6px; }
+.exo .plan { color: #888; font-size: .82em; line-height: 1.7; margin-left: 14px; }
+.exo .plan li { margin: 3px 0; }
+.exo .phrase { background: rgba(79,195,247,.04); border-left: 3px solid #4fc3f7; padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; font-style: italic; color: #aaa; font-size: .82em; }
+.exo .eval-box { background: rgba(255,255,255,.02); border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: .75em; color: #555; }
+.exo .eval-box strong { color: #4fc3f7; }
+
+footer { text-align: center; padding: 30px 20px; color: #444; font-size: .72em; border-top: 1px solid rgba(255,255,255,.03); margin-top: 30px; }
+footer a { color: #4fc3f7; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🔬 <span>Exercices</span> scientifiques</h1>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" data-i18n="back">← Retour</a>
+      <div class="lang-toggle" id="lang-toggle">
+        <span class="active" data-lang="fr">FR</span>
+        <span data-lang="en">EN</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="exos-list"></div>
+
+  <footer>
+    <p data-i18n="footer">OSCAR-S — <a href="../index.html">Oratron</a> · Exercices adaptés aux scientifiques</p>
+  </footer>
+</div>
+
+<script>
+const L = {
+  fr: { back: '← Retour', footer: 'OSCAR-S — Oratron · Exercices adaptés aux scientifiques' },
+  en: { back: '← Back', footer: 'OSCAR-S — Oratron · Exercises adapted for scientists' }
+};
+
+const EXOS = [
+  {
+    num: 'A', title: 'Expliquer le jet EM à un enfant', span: 'N1 — Vulgarisation complète',
+    meta: 'Objectif : Zéro jargon. Une image mentale forte. 30 secondes.',
+    plan: [
+      'Introduction : "Tu sais comment une loupe concentre la lumière ?"',
+      'Image mentale : "C\'est pareil avec des ondes invisibles."',
+      'Utilité : "Ça permet de voir à l\'intérieur des objets sans les toucher."',
+      'Conclusion : "Le jet EM, c\'est une loupe pour ondes radio."',
+    ],
+    ouv: '« Imagine que tu as une lampe qui peut voir à travers le plastique. »',
+    concl: '« Voilà, un jet EM, c\'est une lampe très spéciale qui peut voir l\'invisible. »',
+    eval: "L'enfant peut reformuler en une phrase."
+  },
+  {
+    num: 'B', title: 'Expliquer le jet EM à un jury', span: 'N3 — Précision scientifique',
+    meta: 'Objectif : Rigueur, données, limites. 5 minutes.',
+    plan: [
+      'Contexte : champ proche vs lointain',
+      'Problème : focalisation micro-onde sub-longueur d\'onde',
+      'Hypothèse : structure diélectrique crée un jet',
+      'Méthode : simulation HFSS, guide circulaire, métalens',
+      'Résultats : carte de champ, FWHM=0.15λ, Emax, Zmax',
+      'Interprétation : concentration en champ proche',
+      'Limites : bande étroite, pertes diélectriques',
+      'Suite : élargissement de bande, prototypes',
+    ],
+    ouv: '« Je suis ici pour vous montrer qu\'on peut focaliser une onde micro-onde bien en dessous de la limite de diffraction. »',
+    concl: '« Notre approche atteint FWHM=0.15λ à 10GHz, 3× mieux qu\'un guide ouvert. »',
+    eval: 'Le jury peut citer les 3 résultats clés après ta présentation.'
+  },
+  {
+    num: 'C', title: 'FWHM — Le pont technique-public', span: 'Méthode 4 — Pont',
+    meta: 'Objectif : Rendre FWHZ compréhensible à tout niveau. 30 secondes.',
+    plan: [
+      'Terme : "FWHM = Full Width at Half Maximum, la largeur du faisceau à mi-puissance."',
+      'Image : "Comme la largeur d\'un marqueur. Plus c\'est fin, plus tu dessines précis."',
+      'Utilité : "En CND, FWHM=0.15λ veut dire qu\'on détecte des défauts de cette taille."',
+    ],
+    ouv: '« La FWHM, c\'est notre résolution. Plus elle est petite, plus on voit fin. »',
+    concl: '« Donc FWHM, c\'est la précision de notre loupe micro-onde. »',
+    eval: "Tu expliques en <30s et l'autre peut dire pourquoi c'est important."
+  },
+  {
+    num: 'D', title: 'Zmax — Pourquoi c\'est critique', span: 'Méthode 4 — Pont',
+    meta: 'Objectif : Expliquer l\'importance de la position axiale du maximum de champ.',
+    plan: [
+      'Définition : "Zmax, c\'est la distance optimale pour placer l\'échantillon."',
+      'Image : "Le point chaud sous une loupe. Trop près ou trop loin, ça marche moins."',
+      'Conséquence : "Zmax=0.25cm, l\'échantillon doit être à cette distance précise."',
+    ],
+    ouv: '« Zmax n\'est pas juste un nombre. C\'est la position de travail. »',
+    concl: '« Connaître Zmax, c\'est savoir où placer la cible pour un maximum de sensibilité. »',
+    eval: 'Tu expliques que Zmax est une contrainte de conception, pas juste un chiffre.'
+  },
+  {
+    num: 'E', title: 'Présenter une anomalie de simulation', span: 'Crédibilité sous pression',
+    meta: 'Objectif : Présenter un résultat inattendu sans perdre en crédibilité.',
+    plan: [
+      'Reconnaître : "Ce résultat nous a surpris. Voici pourquoi."',
+      'Vérifications : "On a vérifié maillage, conditions aux limites, solveur."',
+      'Reproductible : "Le résultat est reproductible."',
+      'Hypothèse : "Notre hypothèse est que..."',
+      'Limite : "On n\'a pas encore d\'explication définitive."',
+      'Suite : "On prévoit des mesures pour valider ou infirmer."',
+    ],
+    ouv: '« On a observé un pic inattendu à X. Plutôt que de le cacher, on a creusé. »',
+    concl: '« C\'est pourquoi on ne l\'interprète pas encore, mais on le montre. »',
+    eval: "L'auditeur perçoit de la rigueur, pas de l'incompétence."
+  },
+  {
+    num: 'F', title: 'Défendre le choix d\'un guide circulaire', span: 'Justification technique',
+    meta: 'Objectif : Justifier un choix de conception avec des données.',
+    plan: [
+      'Contexte : "On compare guide circulaire, rectangulaire et coaxial."',
+      'Résultat : "Le circulaire donne la meilleure symétrie de champ."',
+      'Données : "FWHM=0.15λ contre 0.18λ pour le rectangulaire."',
+      'Limite : "Au prix d\'une polarisation plus sensible."',
+      'Conclusion : "Meilleur compromis symétrie/performance."',
+    ],
+    ouv: '« Le choix du guide circulaire n\'est pas arbitraire. Voici les 3 raisons. »',
+    concl: '« C\'est le meilleur compromis entre symétrie, pertes et simplicité. »',
+    eval: 'Tu donnes 3 raisons précises, pas une seule vague.'
+  },
+  {
+    num: 'G', title: 'Répondre à "Quelle est l\'application ?"', span: 'Question typique',
+    meta: 'Objectif : Relier la recherche fondamentale à une application concrète. 1 min.',
+    plan: [
+      'Reformuler : "Vous me demandez à quoi ça sert concrètement ?"',
+      'Remercier : "C\'est la question qu\'on entend le plus."',
+      'Répondre : "CND sans contact pour défauts sub-millimétriques."',
+      'Exemple : "Détection de fissures dans des matériaux composites."',
+      'Limite : "Pour l\'instant en laboratoire, mais..."',
+      'Ouverture : "...on travaille avec un partenaire industriel."',
+    ],
+    ouv: '« L\'application la plus directe, c\'est le contrôle non destructif. »',
+    concl: '« Donc oui, c\'est fondamental, mais l\'application est à portée. »',
+    eval: "Tu donnes un exemple concret en <1 min."
+  },
+  {
+    num: 'H', title: 'Répondre à "Quelle est la limite ?"', span: 'Transparence = crédibilité',
+    meta: 'Objectif : Admettre une limite sans perdre en autorité.',
+    plan: [
+      'Reformuler : "Vous me demandez où s\'arrête notre méthode ?"',
+      'Remercier : "Excellente question. On se l\'est posée."',
+      'Répondre : "Bande étroite. Performant à 10GHz, dégradé à 8 ou 12."',
+      'Préciser : "C\'est lié à la résonance de la métalens."',
+      'Ouverture : "On explore des structures large bande."',
+    ],
+    ouv: '« La principale limite aujourd\'hui, c\'est la bande passante. »',
+    concl: '« C\'est notre prochain verrou scientifique. »',
+    eval: "Tu précises la cause et la suite, sans te défendre."
+  },
+];
+
+let lang = localStorage.getItem('oratron-lang') || 'fr';
+
+function render() {
+  let html = '';
+  EXOS.forEach(e => {
+    html += `<div class="exo">
+      <div class="num">Exercice ${e.num} — ${e.span}</div>
+      <h3>${e.title} <span>→</span></h3>
+      <div class="meta">${e.meta}</div>
+      <div class="plan"><strong>Plan :</strong><ul>${e.plan.map(p => `<li>${p}</li>`).join('')}</ul></div>
+      <div class="phrase">Ouverture : ${e.ouv}</div>
+      <div class="phrase">Conclusion : ${e.concl}</div>
+      <div class="eval-box"><strong>Critère :</strong> ${e.eval}</div>
+    </div>`;
+  });
+  document.getElementById('exos-list').innerHTML = html;
+}
+
+document.getElementById('lang-toggle').onclick = () => {
+  lang = lang === 'fr' ? 'en' : 'fr';
+  localStorage.setItem('oratron-lang', lang);
+  document.querySelectorAll('.lang-toggle span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+};
+
+render();
+</script>
+</body>
+</html>
